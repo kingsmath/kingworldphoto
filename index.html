@@ -9,6 +9,18 @@
   <meta id="pg-desc" name="description" content="세계 도시를 여행하며 즐기는 두뇌 퍼즐 게임 - 세계여행 퍼즐킹">
   <meta id="pg-keys" name="keywords" content="세계여행, 퍼즐, 게임, 도시, 여행퍼즐">
 
+  <!-- Open Graph / Facebook (공유 썸네일 1.png 지정) -->
+  <meta property="og:type" content="website">
+  <meta id="og-title" property="og:title" content="세계여행 퍼즐킹 - 세계 도시 퍼즐 게임">
+  <meta id="og-desc" property="og:description" content="세계 도시를 여행하며 즐기는 두뇌 퍼즐 게임 - 세계여행 퍼즐킹">
+  <meta property="og:image" content="1.png">
+
+  <!-- Twitter Card -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta id="tw-title" property="twitter:title" content="세계여행 퍼즐킹 - 세계 도시 퍼즐 게임">
+  <meta id="tw-desc" property="twitter:description" content="세계 도시를 여행하며 즐기는 두뇌 퍼즐 게임 - 세계여행 퍼즐킹">
+  <meta property="twitter:image" content="1.png">
+
   <link
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Playfair+Display:wght@700;900&display=swap"
     rel="stylesheet">
@@ -3543,6 +3555,17 @@
         if (titleEl) titleEl.textContent = t.seo_title;
         if (descEl) descEl.setAttribute('content', t.seo_desc);
         if (keysEl) keysEl.setAttribute('content', t.seo_keys);
+        
+        // Open Graph & Twitter 메타 태그 동시 동적 업데이트
+        const ogTitle = document.getElementById('og-title');
+        const ogDesc = document.getElementById('og-desc');
+        const twTitle = document.getElementById('tw-title');
+        const twDesc = document.getElementById('tw-desc');
+        if (ogTitle) ogTitle.setAttribute('content', t.seo_title);
+        if (ogDesc) ogDesc.setAttribute('content', t.seo_desc);
+        if (twTitle) twTitle.setAttribute('content', t.seo_title);
+        if (twDesc) twDesc.setAttribute('content', t.seo_desc);
+        
         document.documentElement.lang = langCode;
       }
 
