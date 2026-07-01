@@ -1,0 +1,3796 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title id="pg-title">세계여행 퍼즐킹</title>
+  <meta id="pg-desc" name="description" content="세계 도시를 여행하며 즐기는 두뇌 퍼즐 게임 - 세계여행 퍼즐킹">
+  <meta id="pg-keys" name="keywords" content="세계여행, 퍼즐, 게임, 도시, 여행퍼즐">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Playfair+Display:wght@700;900&display=swap"
+    rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Leaflet.js for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --app-height: 100vh;
+      --primary: #e8433a;
+      --secondary: #1a3a8f;
+      --accent: #f5c842;
+      --stamp-red: #c0392b;
+      --stamp-blue: #1a5276;
+      --paper: #fdf6e3;
+      --paper-dark: #f0e8d0;
+      --ink: #2c3e50;
+      --panel-bg: rgba(253, 246, 227, 0.97);
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Noto Sans KR', sans-serif;
+      width: 100%;
+      height: 100vh;
+      height: var(--app-height);
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #1a3a8f 0%, #0d2260 50%, #1a1a4e 100%);
+    }
+
+    /* ===== PASSPORT STAMP DECORATIONS ===== */
+    .stamp-deco {
+      position: fixed;
+      border-radius: 50%;
+      border: 4px solid;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== TOP AREA ===== */
+    #top-area {
+      flex: 0 0 22%;
+      min-height: 100px;
+      background: linear-gradient(180deg, #fdf6e3 0%, #f0e2c0 100%);
+      border-bottom: 6px solid var(--stamp-red);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    #top-area::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        repeating-linear-gradient(0deg,
+          transparent,
+          transparent 22px,
+          rgba(26, 58, 143, 0.07) 22px,
+          rgba(26, 58, 143, 0.07) 23px);
+      pointer-events: none;
+    }
+
+    #scoreboard-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 0 15px;
+      height: 100%;
+    }
+
+    .player-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 100%;
+      flex: 1;
+    }
+
+    .p1-group {
+      justify-content: flex-start;
+    }
+
+    .p2-group {
+      justify-content: flex-end;
+    }
+
+    .ref-img-large {
+      height: 82%;
+      max-height: 110px;
+      min-height: 75px;
+      aspect-ratio: auto;
+      border: 4px solid var(--stamp-red);
+      border-radius: 6px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 3px 3px 0 rgba(192, 57, 43, 0.4), 0 5px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .ref-img-large::after {
+      content: '✈ PASSPORT';
+      position: absolute;
+      bottom: 3px;
+      right: 3px;
+      font-size: 8px;
+      color: rgba(192, 57, 43, 0.6);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .ref-img-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .player-zone {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      min-width: 160px;
+      justify-content: center;
+      position: relative;
+    }
+
+    .p1-zone {
+      background: linear-gradient(135deg, #ffe8e8, #ffd0d0);
+      border: 3px solid var(--stamp-red);
+      color: var(--stamp-red);
+      box-shadow: 3px 3px 0 rgba(192, 57, 43, 0.3);
+    }
+
+    .p2-zone {
+      background: linear-gradient(135deg, #e8eeff, #c5d3ff);
+      border: 3px solid var(--stamp-blue);
+      color: var(--stamp-blue);
+      flex-direction: row-reverse;
+      box-shadow: 3px 3px 0 rgba(26, 82, 118, 0.3);
+    }
+
+    .player-label {
+      font-size: clamp(16px, 2vw, 24px);
+      font-weight: 900;
+    }
+
+    .score {
+      font-size: clamp(32px, 3.5vw, 52px);
+      font-weight: 900;
+      margin: 0 8px;
+      line-height: 1;
+    }
+
+    .center-info {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 15px;
+    }
+
+    .timer-container {
+      text-align: center;
+      width: 140px;
+    }
+
+    .timer-label {
+      color: var(--stamp-red);
+      font-size: clamp(14px, 1.8vw, 22px);
+      margin-bottom: 6px;
+      font-weight: 900;
+      font-family: 'Playfair Display', serif;
+      text-shadow: 1px 1px 0 rgba(192, 57, 43, 0.3);
+    }
+
+    #timer-bar {
+      width: 100%;
+      height: 14px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 7px;
+      overflow: hidden;
+      border: 2px solid rgba(192, 57, 43, 0.3);
+    }
+
+    #timer-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #e8433a, #f5c842, #2ecc71);
+      transition: width 1s linear;
+    }
+
+    /* ===== GAME AREA ===== */
+    #game-area-wrapper {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+      background: linear-gradient(135deg, #0f2460 0%, #1a3a8f 50%, #0d2260 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* World map pattern background */
+    #game-area-wrapper::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    #game-area {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      position: relative;
+      gap: 12px;
+    }
+
+    .table-bg {
+      flex: 1;
+      border-radius: 12px;
+      border: 6px solid rgba(255, 255, 255, 0.15);
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4), 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .left-table {
+      background: radial-gradient(ellipse at 30% 30%, #7b1a1a 0%, #4a0e0e 100%);
+    }
+
+    .right-table {
+      background: radial-gradient(ellipse at 70% 30%, #1e4d8c 0%, #0d2a5c 100%);
+    }
+
+    .divider {
+      position: absolute;
+      left: 50%;
+      top: 10px;
+      bottom: 10px;
+      width: 3px;
+      background: linear-gradient(180deg, transparent, rgba(245, 200, 66, 0.5), rgba(245, 200, 66, 0.8), rgba(245, 200, 66, 0.5), transparent);
+      transform: translateX(-50%);
+      z-index: 4;
+      border-radius: 2px;
+    }
+
+    .board {
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      border: 4px solid rgba(245, 200, 66, 0.8);
+      box-sizing: content-box;
+      overflow: hidden;
+      border-radius: 4px;
+    }
+
+    .puzzle-piece {
+      position: absolute;
+      box-sizing: border-box;
+      border: 1px solid rgba(0, 0, 0, 0.3);
+      background-repeat: no-repeat;
+      transition: left 0.15s ease-out, top 0.15s ease-out;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .puzzle-piece.dragging {
+      transition: none;
+      z-index: 100;
+      outline: 3px solid var(--accent);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      cursor: grabbing;
+      opacity: 0.95;
+    }
+
+    /* ===== FLOAT BUTTONS ===== */
+    .float-btn {
+      position: fixed;
+      top: 190px;
+      width: 48px;
+      height: 48px;
+      background: rgba(253, 246, 227, 0.15);
+      border: 2px solid rgba(253, 246, 227, 0.4);
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fdf6e3;
+      font-size: 22px;
+      transition: all 0.2s;
+      backdrop-filter: blur(4px);
+    }
+
+    .float-btn:hover {
+      background: rgba(253, 246, 227, 0.3);
+      transform: scale(1.1);
+    }
+
+    .float-btn:active {
+      transform: scale(0.95);
+    }
+
+    #fullscreen-btn {
+      right: 20px;
+    }
+
+    #btn-home {
+      left: 20px;
+    }
+
+    /* ===== OVERLAYS ===== */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 20, 60, 0.88);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    /* ===== START MODAL ===== */
+    .modal-content {
+      background: var(--panel-bg);
+      padding: 20px 28px;
+      border-radius: 4px;
+      border: 3px solid var(--stamp-red);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 900px;
+      width: 96%;
+      max-height: 96vh;
+      overflow-y: auto;
+      box-shadow:
+        8px 8px 0 rgba(192, 57, 43, 0.25),
+        0 20px 60px rgba(0, 0, 0, 0.6);
+      position: relative;
+      color: var(--ink);
+    }
+
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 2px;
+      background-image: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 28px,
+          rgba(26, 58, 143, 0.06) 28px,
+          rgba(26, 58, 143, 0.06) 29px);
+      pointer-events: none;
+    }
+
+    .modal-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .modal-content::-webkit-scrollbar-thumb {
+      background: var(--stamp-red);
+      border-radius: 3px;
+    }
+
+    /* Red/Blue margin lines like letter paper */
+    .modal-content::after {
+      content: '';
+      position: absolute;
+      left: 55px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(232, 67, 58, 0.25);
+      pointer-events: none;
+    }
+
+    .game-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 4.5vw, 52px) !important;
+      margin: 0 0 6px 0;
+      font-weight: 900;
+      color: var(--stamp-red);
+      text-shadow: 2px 2px 0 rgba(192, 57, 43, 0.2);
+      letter-spacing: -0.5px;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .game-subtitle {
+      font-size: clamp(13px, 1.5vw, 17px);
+      color: var(--stamp-blue);
+      font-weight: 700;
+      margin-bottom: 14px;
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    /* ===== TABS ===== */
+    .tab-container {
+      display: flex;
+      background: rgba(26, 58, 143, 0.08);
+      border-radius: 30px;
+      padding: 5px;
+      margin-bottom: 14px;
+      width: 100%;
+      max-width: 550px;
+      border: 2px solid rgba(26, 58, 143, 0.2);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      font-size: clamp(13px, 1.6vw, 16px);
+      font-weight: 700;
+      color: #777;
+      background: transparent;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .tab-btn.active {
+      background: var(--stamp-red);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(192, 57, 43, 0.4);
+    }
+
+    .tab-content {
+      width: 100%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .tab-content.active {
+      display: flex;
+      animation: fadeInUp 0.3s ease;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ===== RANDOM BOX ===== */
+    .random-box {
+      width: 100%;
+      max-width: 480px;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 3px dashed var(--stamp-red);
+      background: rgba(232, 67, 58, 0.05);
+    }
+
+    .random-mark {
+      font-size: 60px;
+      line-height: 1;
+      animation: spinGlobe 4s ease-in-out infinite;
+    }
+
+    @keyframes spinGlobe {
+
+      0%,
+      100% {
+        transform: rotate(-5deg) scale(1);
+      }
+
+      50% {
+        transform: rotate(5deg) scale(1.05);
+      }
+    }
+
+    /* ===== GALLERY ===== */
+    .gallery-wrapper {
+      width: 100%;
+      max-width: 800px;
+      background: rgba(26, 58, 143, 0.05);
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid rgba(26, 58, 143, 0.2);
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+      max-height: 22vh;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .gallery-grid::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .gallery-grid::-webkit-scrollbar-thumb {
+      background: var(--stamp-red);
+      border-radius: 3px;
+    }
+
+    .gallery-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 105px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 72px;
+      object-fit: cover;
+    }
+
+    .gallery-item .g-title {
+      padding: 3px 5px;
+      font-size: 11px;
+      text-align: center;
+      color: #444;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 700;
+      background: #f9f5ec;
+    }
+
+    .gallery-item .g-country {
+      font-size: 9px;
+      text-align: center;
+      color: #888;
+      padding: 0 4px 3px;
+      background: #f9f5ec;
+    }
+
+    .gallery-item:hover {
+      transform: translateY(-2px);
+      border-color: rgba(192, 57, 43, 0.5);
+    }
+
+    .gallery-item.active {
+      border-color: var(--stamp-red);
+      box-shadow: 0 0 12px rgba(192, 57, 43, 0.5);
+    }
+
+    /* ===== CREDIT ROW ===== */
+    .credit-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 7px 10px;
+      background: rgba(26, 58, 143, 0.06);
+      border-radius: 10px;
+      border: 1px solid rgba(26, 58, 143, 0.15);
+    }
+
+    .credit-item {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--stamp-blue);
+    }
+
+    .credit-link {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--stamp-red);
+      text-decoration: none;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(192, 57, 43, 0.08);
+      border: 1px solid rgba(192, 57, 43, 0.3);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .credit-link:hover {
+      background: rgba(192, 57, 43, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .book-link {
+      color: var(--stamp-blue);
+      background: rgba(26, 58, 143, 0.08);
+      border-color: rgba(26, 58, 143, 0.3);
+    }
+
+    .book-link:hover {
+      background: rgba(26, 58, 143, 0.18);
+    }
+
+    /* ===== START BTN ROW ===== */
+    .start-btn-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .photographer-credit {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--stamp-blue);
+      white-space: nowrap;
+      opacity: 0.85;
+    }
+
+    /* ===== OTHER GAME LINK ===== */
+    .other-game-link {
+      display: inline-block;
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #888;
+      text-decoration: none;
+      padding: 5px 18px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      transition: all 0.2s;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .other-game-link:hover {
+      color: var(--stamp-red);
+      border-color: var(--stamp-red);
+      background: rgba(192, 57, 43, 0.06);
+    }
+
+    /* ===== SETTINGS ===== */
+    .settings-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .setting-group {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      background: rgba(26, 58, 143, 0.07);
+      padding: 6px 12px;
+      border-radius: 25px;
+      border: 2px solid rgba(26, 58, 143, 0.15);
+    }
+
+    .setting-title {
+      font-size: 14px;
+      color: var(--stamp-blue);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .opt-group {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .opt-btn {
+      padding: 5px 11px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.7);
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .opt-btn:hover {
+      background: rgba(26, 58, 143, 0.1);
+    }
+
+    .opt-btn.active {
+      background: var(--stamp-blue);
+      color: #fff;
+      border-color: var(--stamp-blue);
+      box-shadow: 0 0 8px rgba(26, 82, 118, 0.4);
+    }
+
+    .start-game-btn {
+      padding: 12px 36px;
+      font-size: 22px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #e8433a, #c0392b);
+      border: 3px solid #fff;
+      border-radius: 50px;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(192, 57, 43, 0.5), 4px 4px 0 rgba(192, 57, 43, 0.3);
+      transition: transform 0.1s, box-shadow 0.2s;
+      font-family: 'Noto Sans KR', sans-serif;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .start-game-btn:hover {
+      transform: scale(1.04) translateY(-2px);
+      box-shadow: 0 10px 30px rgba(192, 57, 43, 0.6), 4px 4px 0 rgba(192, 57, 43, 0.3);
+    }
+
+    .start-game-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* ===== MAP OVERLAY ===== */
+    #overlay-map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 12, 40, 0.92);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      backdrop-filter: blur(8px);
+    }
+
+    #map-container {
+      width: 90%;
+      max-width: 800px;
+      height: 55vh;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 4px solid var(--accent);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(245, 200, 66, 0.2);
+      position: relative;
+    }
+
+    #map-container .leaflet-container {
+      z-index: 1;
+    }
+
+    #map-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(20px, 3vw, 36px);
+      color: var(--accent);
+      font-weight: 900;
+      margin-bottom: 16px;
+      text-shadow: 0 0 20px rgba(245, 200, 66, 0.6);
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    #map-subtitle {
+      margin-top: 14px;
+      font-size: clamp(14px, 2vw, 20px);
+      color: #adbfff;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-align: center;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.7;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    /* ===== COUNTDOWN OVERLAY ===== */
+    #overlay-countdown {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 12, 40, 0.94);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      backdrop-filter: blur(10px);
+    }
+
+    #countdown-image {
+      max-height: 60vh;
+      max-width: 95%;
+      object-fit: contain;
+      border: 6px solid var(--accent);
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 200, 66, 0.2);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    #countdown-destination {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(20px, 3vw, 36px);
+      color: var(--accent);
+      font-weight: 900;
+      margin-bottom: 8px;
+      text-align: center;
+      text-shadow: 0 0 20px rgba(245, 200, 66, 0.5);
+    }
+
+    #countdown-remember {
+      font-size: clamp(18px, 2.5vw, 28px);
+      color: #fff;
+      font-weight: 700;
+      margin-bottom: 14px;
+      text-align: center;
+      display: none;
+    }
+
+    #countdown-number {
+      font-size: 130px;
+      font-weight: 900;
+      color: white;
+      text-shadow: 0 0 40px rgba(255, 255, 255, 0.5), 0 10px 30px rgba(0, 0, 0, 0.8);
+      line-height: 1;
+    }
+
+    #countdown-text {
+      font-size: clamp(18px, 2vw, 26px);
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .loading-spinner {
+      border: 5px solid rgba(255, 255, 255, 0.2);
+      border-top: 5px solid var(--accent);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 15px auto;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0)
+      }
+
+      100% {
+        transform: rotate(360deg)
+      }
+    }
+
+    /* ===== END OVERLAY ===== */
+    #overlay-end {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 12, 40, 0.92);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      backdrop-filter: blur(10px);
+    }
+
+    .end-modal {
+      background: var(--panel-bg);
+      padding: 24px 30px;
+      border-radius: 4px;
+      border: 3px solid var(--stamp-red);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 85vw;
+      box-shadow: 8px 8px 0 rgba(192, 57, 43, 0.2), 0 20px 60px rgba(0, 0, 0, 0.7);
+      color: var(--ink);
+      text-align: center;
+    }
+
+    #end-artwork {
+      max-height: 38vh;
+      max-width: 100%;
+      object-fit: contain;
+      border: 6px solid var(--stamp-red);
+      border-radius: 4px;
+      box-shadow: 4px 4px 0 rgba(192, 57, 43, 0.3), 0 10px 30px rgba(0, 0, 0, 0.5);
+      margin-bottom: 12px;
+    }
+
+    #win-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 60px);
+      font-weight: 900;
+      margin-bottom: 10px;
+      color: var(--stamp-red);
+    }
+
+    #end-title {
+      font-size: clamp(20px, 2.5vw, 30px);
+      font-weight: 900;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    #end-category {
+      font-size: clamp(14px, 1.8vw, 20px);
+      color: var(--stamp-blue);
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    .diff-btn {
+      padding: 10px 28px;
+      font-size: 18px;
+      font-weight: 700;
+      background: var(--stamp-red);
+      border: 2px solid var(--stamp-red);
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .diff-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(192, 57, 43, 0.4);
+    }
+
+    /* ===== INFO PANEL ===== */
+    .info-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 20, 60, 0.9);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+      z-index: 50;
+      backdrop-filter: blur(5px);
+    }
+
+    .info-panel.visible {
+      opacity: 1;
+    }
+
+    .info-content {
+      padding: 20px;
+      width: 100%;
+      max-height: 100%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .info-title {
+      font-size: clamp(18px, 2.5vw, 36px);
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: 5px;
+    }
+
+    .info-category {
+      font-size: clamp(12px, 2vw, 22px);
+      color: #adbfff;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .info-desc {
+      font-size: clamp(11px, 1.3vw, 14px);
+      line-height: 1.6;
+      color: #eee;
+      margin-bottom: 10px;
+      word-break: keep-all;
+    }
+
+    /* ===== QUIZ PANEL ===== */
+    .quiz-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 20, 60, 0.92);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      backdrop-filter: blur(6px);
+      border-radius: 4px;
+    }
+
+    .quiz-destination-label {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(14px, 2vw, 22px);
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+
+    .quiz-title {
+      font-size: clamp(15px, 2vw, 22px);
+      color: #fff;
+      font-weight: 900;
+      margin-bottom: 16px;
+      text-align: center;
+      word-break: keep-all;
+      padding: 0 10px;
+      line-height: 1.4;
+    }
+
+    .quiz-question-text {
+      font-size: clamp(13px, 1.8vw, 20px);
+      color: #e8f0ff;
+      font-weight: 700;
+      margin-bottom: 14px;
+      text-align: center;
+      padding: 0 10px;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+
+    .quiz-btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+    }
+
+    .quiz-btn {
+      padding: 10px 8px;
+      font-size: clamp(12px, 1.6vw, 16px);
+      font-weight: 700;
+      border-radius: 10px;
+      border: 2px solid rgba(245, 200, 66, 0.6);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-family: 'Noto Sans KR', sans-serif;
+      word-break: keep-all;
+      line-height: 1.3;
+    }
+
+    .quiz-btn:hover {
+      background: rgba(245, 200, 66, 0.2);
+      border-color: var(--accent);
+      transform: scale(1.03);
+      box-shadow: 0 0 12px rgba(245, 200, 66, 0.3);
+    }
+
+    /* ===== WRONG FEEDBACK ===== */
+    .wrong-feedback {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(232, 67, 58, 0.96);
+      color: white;
+      padding: 12px 25px;
+      border-radius: 10px;
+      font-size: clamp(16px, 2vw, 24px);
+      font-weight: 900;
+      z-index: 300;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 200, 200, 0.5);
+      pointer-events: none;
+      animation: fadeUpOut 2.2s ease-in-out forwards;
+      white-space: nowrap;
+    }
+
+    @keyframes fadeUpOut {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+      }
+
+      15% {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+
+      80% {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -62%);
+      }
+    }
+
+    /* ===== PASSPORT STAMP ANIMATION ===== */
+    .passport-stamp {
+      position: fixed;
+      font-size: 80px;
+      z-index: 9999;
+      pointer-events: none;
+      animation: stampDown 0.8s ease forwards;
+    }
+
+    @keyframes stampDown {
+      0% {
+        transform: scale(3) rotate(-20deg);
+        opacity: 0;
+      }
+
+      40% {
+        transform: scale(0.9) rotate(5deg);
+        opacity: 1;
+      }
+
+      60% {
+        transform: scale(1.1) rotate(-2deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.9;
+      }
+    }
+
+    /* ===== LEAFLET CUSTOM MARKER ===== */
+    .custom-plane-icon {
+      font-size: 28px;
+      animation: flyIn 0.5s ease;
+    }
+
+    @keyframes flyIn {
+      from {
+        transform: scale(0) rotate(-45deg);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+    }
+
+    .destination-pin {
+      background: var(--stamp-red);
+      border: 3px solid white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      box-shadow: 0 0 10px rgba(232, 67, 58, 0.8);
+      animation: pingAnim 1s ease-in-out infinite;
+    }
+
+    @keyframes pingAnim {
+
+      0%,
+      100% {
+        box-shadow: 0 0 5px rgba(232, 67, 58, 0.8);
+        transform: scale(1);
+      }
+
+      50% {
+        box-shadow: 0 0 20px rgba(232, 67, 58, 1);
+        transform: scale(1.3);
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ===== DECORATIVE BORDERS ===== */
+    .passport-border {
+      position: absolute;
+      inset: 6px;
+      border: 2px dashed rgba(192, 57, 43, 0.25);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    /* ===== QUIZ NUMBER BADGE ===== */
+    .quiz-number {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--accent);
+      color: #333;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Resize text */
+    .resize-text {
+      white-space: nowrap;
+      transition: font-size 0.2s ease;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOP SCOREBOARD -->
+  <div id="top-area">
+    <div id="scoreboard-row">
+      <div class="player-group p1-group">
+        <div class="ref-img-large"><img class="ref-image" src="" alt="Image"></div>
+        <div class="player-zone p1-zone">
+          <div class="player-label resize-text">빨강팀</div>
+          <div class="score" id="score-p1">0%</div>
+        </div>
+      </div>
+      <div class="center-info">
+        <div class="timer-container">
+          <div class="timer-label resize-text" id="txt-timer">진행 시간</div>
+          <div id="timer-bar">
+            <div id="timer-fill"></div>
+          </div>
+        </div>
+      </div>
+      <div class="player-group p2-group">
+        <div class="player-zone p2-zone">
+          <div class="player-label resize-text">파랑팀</div>
+          <div class="score" id="score-p2">0%</div>
+        </div>
+        <div class="ref-img-large"><img class="ref-image" src="" alt="Image"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME AREA -->
+  <div id="game-area-wrapper">
+    <div id="game-area">
+      <div class="table-bg left-table">
+        <div id="board-p1" class="board"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="table-bg right-table">
+        <div id="board-p2" class="board"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOAT BUTTONS -->
+  <div id="btn-home" class="float-btn" title="처음으로">🏠</div>
+  <div id="fullscreen-btn" class="float-btn" onclick="toggleFullscreen()" title="전체화면">⛶</div>
+
+  <!-- ===================== START OVERLAY ===================== -->
+  <div id="overlay-start" class="overlay">
+    <div class="modal-content">
+      <div class="passport-border"></div>
+      <div class="game-title">✈ 세계여행 퍼즐킹</div>
+      <div class="game-subtitle">WORLD TRAVEL PUZZLE KING</div>
+
+      <!-- TABS -->
+      <div class="tab-container">
+        <button class="tab-btn active" data-tab="tab-random" onclick="switchTab('tab-random')">🌐 랜덤 여행지</button>
+        <button class="tab-btn" data-tab="tab-select" onclick="switchTab('tab-select')">🗺 여행지 선택</button>
+      </div>
+
+      <!-- RANDOM TAB -->
+      <div id="tab-random" class="tab-content active">
+        <div class="random-box">
+          <div class="random-mark">🌍</div>
+          <div id="txt-random-title" style="font-size: 18px; color: var(--stamp-red); font-weight: 900;">어디로 여행할까요?</div>
+          <div id="txt-random-desc" style="font-size: 14px; color: #666; text-align: center; line-height: 1.5;">
+            지도에서 랜덤으로 여행지가 선택됩니다!<br>
+            세계 곳곳의 아름다운 도시를 탐험하세요 ✈
+          </div>
+        </div>
+      </div>
+
+      <!-- SELECT TAB -->
+      <div id="tab-select" class="tab-content">
+        <div class="gallery-wrapper">
+          <div class="gallery-grid" id="gallery-grid-cities"></div>
+        </div>
+      </div>
+
+      <!-- CREDIT INFO -->
+      <div class="credit-row">
+        <span class="credit-item" id="txt-credit-photo">사진 : 정혜란</span>
+        <a class="credit-link" id="txt-credit-insta" href="https://www.instagram.com/aprilran/" target="_blank" rel="noopener">더 많은 사진 보기 📸 @aprilran</a>
+        <a class="credit-link book-link" id="txt-credit-book"
+          href="https://search.shopping.naver.com/book/catalog/58672085712?query=%EC%82%AC%EC%A7%84%EC%9C%BC%EB%A1%9C%20%EA%B0%80%EA%BE%B8%EB%8A%94%20%ED%96%89%EB%B3%B5%ED%95%9C%20%EA%B5%90%EC%8B%A4&NaPm=ct%3Dmr1pepi8%7Cci%3Dd8e00e9f8820f3ad559fd8d02a3e11fbf2717574%7Ctr%3Dboksl%7Csn%3D95694%7Chk%3Dd5bd53893c498750bdbc4d6485e335c67fd710e6"
+          target="_blank" rel="noopener">📙 사진으로 가꾸는 행복한 교실 (지식프레임)</a>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="settings-row">
+        <div class="setting-group">
+          <div class="setting-title">⏱ 제한 시간</div>
+          <div class="opt-group" id="time-options">
+            <button class="opt-btn" onclick="selectTime(60,this)">1분</button>
+            <button class="opt-btn" onclick="selectTime(120,this)">2분</button>
+            <button class="opt-btn active" onclick="selectTime(180,this)">3분</button>
+            <button class="opt-btn" onclick="selectTime(300,this)">5분</button>
+            <button class="opt-btn" onclick="selectTime(0,this)">무제한</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-title">🧩 난이도</div>
+          <div class="opt-group" id="grid-options">
+            <button class="opt-btn active" onclick="selectGrid(3,this)">3×3</button>
+            <button class="opt-btn" onclick="selectGrid(4,this)">4×4</button>
+            <button class="opt-btn" onclick="selectGrid(5,this)">5×5</button>
+            <button class="opt-btn" onclick="selectGrid(7,this)">7×7</button>
+            <button class="opt-btn" onclick="selectGrid(10,this)">10×10</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="start-btn-row" style="display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap;">
+        <button class="start-game-btn" onclick="startSequence()">게임 시작</button>
+        <button class="start-game-btn photo-gallery-btn" onclick="openPhotoViewer()" style="
+          background: linear-gradient(135deg, #1e4d8c, #0d2a5c);
+          box-shadow: 0 6px 20px rgba(15,36,96,0.5), 4px 4px 0 rgba(15,36,96,0.3);
+          border-color: #fff;
+        ">사진 감상</button>
+      </div>
+      <a href="https://킹수학.com" class="other-game-link">🎮 다른 게임 고르기</a>
+    </div>
+  </div>
+
+  <!-- ===================== PHOTO VIEWER OVERLAY ===================== -->
+  <div id="overlay-photo-viewer" class="hidden" style="
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 20000;
+    font-family: 'Noto Sans KR', sans-serif;
+    overflow: hidden;
+  ">
+    <!-- 원본 비율로 전체가 나오는 이미지 (여백은 검정) -->
+    <img id="viewer-img" src="" alt="photo" style="
+      width: 100%; height: 100%; object-fit: contain;
+      display: block;
+    ">
+
+    <!-- 이미지 내부 하단 텍스트 정보 오버레이 (가로 한 줄 형태) -->
+    <div style="
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      pointer-events: none;
+      z-index: 20005;
+      white-space: nowrap;
+      color: #fff;
+      font-size: clamp(14px, 2.2vw, 20px);
+      font-weight: 700;
+    ">
+      <span id="viewer-flag-country" style="color: #ddd;">국기 나라</span>
+      <span style="color: rgba(255,255,255,0.4); font-weight: 300;">·</span>
+      <span id="viewer-city" style="color: #fbbf24; font-weight: 900;">도시이름</span>
+      <span id="viewer-index" style="color: #999; font-size: 0.85em; margin-left: 4px; font-weight: 400;">(1 / 38)</span>
+    </div>
+
+    <!-- 플로팅 컨트롤 버튼들 -->
+    <!-- 닫기 버튼 -->
+    <button onclick="closePhotoViewer()" style="
+      position: absolute; top: 25px; right: 25px;
+      background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 50%;
+      width: 48px; height: 48px; color: #fff; font-size: 24px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      z-index: 20010;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    " onmouseenter="this.style.background='rgba(232, 67, 58, 0.8)'; this.style.borderColor='#fff';" onmouseleave="this.style.background='rgba(0, 0, 0, 0.5)'; this.style.borderColor='rgba(255, 255, 255, 0.4)';">✕</button>
+    
+    <!-- 이전 버튼 (좌측 플로팅) -->
+    <button onclick="prevPhoto()" style="
+      position: absolute; left: 25px; top: 50%; transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 50%;
+      width: 56px; height: 56px; color: #fff; font-size: 24px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      z-index: 20010;
+      user-select: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    " onmouseenter="this.style.background='rgba(255, 255, 255, 0.8)'; this.style.color='#000'; this.style.borderColor='#fff';" onmouseleave="this.style.background='rgba(0, 0, 0, 0.5)'; this.style.color='#fff'; this.style.borderColor='rgba(255, 255, 255, 0.4)';">◀</button>
+    
+    <!-- 다음 버튼 (우측 플로팅) -->
+    <button onclick="nextPhoto()" style="
+      position: absolute; right: 25px; top: 50%; transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 50%;
+      width: 56px; height: 56px; color: #fff; font-size: 24px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      z-index: 20010;
+      user-select: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    " onmouseenter="this.style.background='rgba(255, 255, 255, 0.8)'; this.style.color='#000'; this.style.borderColor='#fff';" onmouseleave="this.style.background='rgba(0, 0, 0, 0.5)'; this.style.color='#fff'; this.style.borderColor='rgba(255, 255, 255, 0.4)';">▶</button>
+  </div>
+
+  <!-- ===================== MAP OVERLAY ===================== -->
+  <div id="overlay-map" class="hidden">
+    <div id="map-title">✈ 여행지를 찾는 중...</div>
+    <div id="map-container"></div>
+    <div id="map-subtitle">지도에서 목적지를 선택하고 있습니다...</div>
+  </div>
+
+  <!-- ===================== COUNTDOWN OVERLAY ===================== -->
+  <div id="overlay-countdown" class="hidden">
+    <div id="countdown-text">게임 준비! (이미지 로딩 중...)</div>
+    <div class="loading-spinner hidden" id="loading-indicator"></div>
+    <div id="countdown-destination"></div>
+    <img id="countdown-image" src="" alt="여행지">
+    <div id="countdown-remember">🗺 여행지를 잘 기억하세요!</div>
+    <div id="countdown-number">5</div>
+  </div>
+
+  <!-- ===================== END OVERLAY ===================== -->
+  <div id="overlay-end" class="hidden">
+    <div class="end-modal">
+      <div id="win-title"></div>
+      <img id="end-artwork" src="" alt="완성된 여행지">
+      <div id="end-title">여행지명</div>
+      <div id="end-category">국가</div>
+      <button class="diff-btn" onclick="document.getElementById('btn-home').click()">다시 여행하기 ✈</button>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       CITY / COUNTRY DATABASE - img 폴더 매핑
+       ============================================================ */
+    const cityDB = [
+      { file: "그리스_산토리니.png", country: "그리스", city: "산토리니", lat: 36.4, lng: 25.43, flag: "🇬🇷", countryEn: "Greece", cityEn: "Santorini" },
+      { file: "대만_타이페이.png", country: "대만", city: "타이페이", lat: 25.03, lng: 121.56, flag: "🇹🇼", countryEn: "Taiwan", cityEn: "Taipei" },
+      { file: "대한민국_서울.png", country: "대한민국", city: "서울", lat: 37.57, lng: 126.97, flag: "🇰🇷", countryEn: "South Korea", cityEn: "Seoul" },
+      { file: "모로코-메르주가사하라사막.png", country: "모로코", city: "메르주가 사하라사막", lat: 31.05, lng: -3.97, flag: "🇲🇦", countryEn: "Morocco", cityEn: "Merzouga Sahara" },
+      { file: "모로코_쉐프샤우엔.png", country: "모로코", city: "쉐프샤우엔", lat: 35.17, lng: -5.27, flag: "🇲🇦", countryEn: "Morocco", cityEn: "Chefchaouen" },
+      { file: "미국_뉴욕.png", country: "미국", city: "뉴욕", lat: 40.71, lng: -74.00, flag: "🇺🇸", countryEn: "USA", cityEn: "New York" },
+      { file: "미국_라스베가스1.png", country: "미국", city: "라스베가스", lat: 36.17, lng: -115.14, flag: "🇺🇸", countryEn: "USA", cityEn: "Las Vegas" },
+      { file: "미국_라스베가스2.png", country: "미국", city: "라스베가스 (2)", lat: 36.17, lng: -115.14, flag: "🇺🇸", countryEn: "USA", cityEn: "Las Vegas Boulevard" },
+      { file: "미국_샌프란시스코.png", country: "미국", city: "샌프란시스코", lat: 37.77, lng: -122.42, flag: "🇺🇸", countryEn: "USA", cityEn: "San Francisco" },
+      { file: "볼리비아_우유니.png", country: "볼리비아", city: "우유니 소금사막", lat: -20.13, lng: -67.49, flag: "🇧🇴", countryEn: "Bolivia", cityEn: "Uyuni Salt Flat" },
+      { file: "스위스_체르마트.png", country: "스위스", city: "체르마트", lat: 46.02, lng: 7.75, flag: "🇨🇭", countryEn: "Switzerland", cityEn: "Zermatt" },
+      { file: "스페인_세비야.png", country: "스페인", city: "세비야", lat: 37.38, lng: -5.99, flag: "🇪🇸", countryEn: "Spain", cityEn: "Seville" },
+      { file: "슬로베니아_블레드.png", country: "슬로베니아", city: "블레드", lat: 46.36, lng: 14.11, flag: "🇸🇮", countryEn: "Slovenia", cityEn: "Bled" },
+      { file: "아이슬란드_그룬다르피외르뒤르(도시이름은 아니지만 더 유명한 이 지형 이름으로는 키르큐펠).png", country: "아이슬란드", city: "키르큐펠 (아이슬란드)", lat: 64.93, lng: -23.31, flag: "🇮🇸", countryEn: "Iceland", cityEn: "Kirkjufell" },
+      { file: "오스트리아_빈.png", country: "오스트리아", city: "빈", lat: 48.20, lng: 16.37, flag: "🇦🇹", countryEn: "Austria", cityEn: "Vienna" },
+      { file: "이탈리아_돌로미티.png", country: "이탈리아", city: "돌로미티", lat: 46.41, lng: 11.85, flag: "🇮🇹", countryEn: "Italy", cityEn: "Dolomites" },
+      { file: "이탈리아_로마.png", country: "이탈리아", city: "로마", lat: 41.90, lng: 12.49, flag: "🇮🇹", countryEn: "Italy", cityEn: "Rome" },
+      { file: "이탈리아_포지타노.png", country: "이탈리아", city: "포지타노", lat: 40.63, lng: 14.48, flag: "🇮🇹", countryEn: "Italy", cityEn: "Positano" },
+      { file: "이탈리아_피렌체.png", country: "이탈리아", city: "피렌체", lat: 43.77, lng: 11.26, flag: "🇮🇹", countryEn: "Italy", cityEn: "Florence" },
+      { file: "일본_가마쿠라.png", country: "일본", city: "가마쿠라", lat: 35.32, lng: 139.55, flag: "🇯🇵", countryEn: "Japan", cityEn: "Kamakura" },
+      { file: "일본_교토.png", country: "일본", city: "교토", lat: 35.01, lng: 135.76, flag: "🇯🇵", countryEn: "Japan", cityEn: "Kyoto" },
+      { file: "일본_도쿄.png", country: "일본", city: "도쿄", lat: 35.68, lng: 139.69, flag: "🇯🇵", countryEn: "Japan", cityEn: "Tokyo" },
+      { file: "일본_비에이.png", country: "일본", city: "비에이", lat: 43.58, lng: 142.47, flag: "🇯🇵", countryEn: "Japan", cityEn: "Biei" },
+      { file: "일본_삿포로.png", country: "일본", city: "삿포로", lat: 43.06, lng: 141.35, flag: "🇯🇵", countryEn: "Japan", cityEn: "Sapporo" },
+      { file: "일본_오사카.png", country: "일본", city: "오사카", lat: 34.69, lng: 135.50, flag: "🇯🇵", countryEn: "Japan", cityEn: "Osaka" },
+      { file: "일본_후지.png", country: "일본", city: "후지산", lat: 35.36, lng: 138.73, flag: "🇯🇵", countryEn: "Japan", cityEn: "Mount Fuji" },
+      { file: "체코_프라하.png", country: "체코", city: "프라하", lat: 50.07, lng: 14.42, flag: "🇨🇿", countryEn: "Czech Republic", cityEn: "Prague" },
+      { file: "캐나다_토론토.png", country: "캐나다", city: "토론토", lat: 43.65, lng: -79.38, flag: "🇨🇦", countryEn: "Canada", cityEn: "Toronto" },
+      { file: "쿠바_아바나.png", country: "쿠바", city: "아바나", lat: 23.13, lng: -82.38, flag: "🇨🇺", countryEn: "Cuba", cityEn: "Havana" },
+      { file: "크로아티아_두브로브니크.png", country: "크로아티아", city: "두브로브니크", lat: 42.65, lng: 18.09, flag: "🇭🇷", countryEn: "Croatia", cityEn: "Dubrovnik" },
+      { file: "튀르키예_이스탄불.png", country: "튀르키예", city: "이스탄불", lat: 41.01, lng: 28.96, flag: "🇹🇷", countryEn: "Turkey", cityEn: "Istanbul" },
+      { file: "튀르키예_카파도키아.png", country: "튀르키예", city: "카파도키아", lat: 38.64, lng: 34.83, flag: "🇹🇷", countryEn: "Turkey", cityEn: "Cappadocia" },
+      { file: "페로제도_뵈르.png", country: "페로 제도", city: "뵈르", lat: 62.00, lng: -6.79, flag: "🇫🇴", countryEn: "Faroe Islands", cityEn: "Bøur" },
+      { file: "페루_마추픽추.png", country: "페루", city: "마추픽추", lat: -13.16, lng: -72.54, flag: "🇵🇪", countryEn: "Peru", cityEn: "Machu Picchu" },
+      { file: "포르투갈_포르투.png", country: "포르투갈", city: "포르투", lat: 41.15, lng: -8.61, flag: "🇵🇹", countryEn: "Portugal", cityEn: "Porto" },
+      { file: "프랑스_파리.png", country: "프랑스", city: "파리", lat: 48.86, lng: 2.35, flag: "🇫🇷", countryEn: "France", cityEn: "Paris" },
+      { file: "헝가리_부다페스트.png", country: "헝가리", city: "부다페스트", lat: 47.49, lng: 19.04, flag: "🇭🇺", countryEn: "Hungary", cityEn: "Budapest" },
+      { file: "홍콩_홍콩섬.png", country: "홍콩", city: "홍콩", lat: 22.33, lng: 114.18, flag: "🇭🇰", countryEn: "Hong Kong", cityEn: "Hong Kong Island" }
+    ];
+
+    /* ============================================================
+       COUNTRY QUIZ DATABASE - 각 나라별 10개 퀴즈
+       ============================================================ */
+    const quizDB = {
+      "그리스": [
+        { q: "산토리니는 어느 바다에 있는 섬인가요?", a: "에게해", opts: ["대서양", "태평양", "에게해", "홍해"] },
+        { q: "그리스의 수도는 어디인가요?", a: "아테네", opts: ["아테네", "테살로니키", "파트라", "헤라클리온"] },
+        { q: "산토리니 섬의 상징적인 건물 색깔 조합은?", a: "파란 지붕과 흰 벽", opts: ["파란 지붕과 흰 벽", "빨간 지붕과 노란 벽", "초록 지붕과 흰 벽", "주황 지붕과 분홍 벽"] },
+        { q: "고대 그리스의 유명한 신전인 '파르테논 신전'이 있는 곳은?", a: "아크로폴리스", opts: ["아크로폴리스", "올림피아", "델피", "에피다우로스"] },
+        { q: "그리스에서 발명된 운동 경기는?", a: "올림픽", opts: ["올림픽", "월드컵", "아시안게임", "마라톤"] },
+        { q: "산토리니의 화산 폭발로 생긴 지형은?", a: "칼데라", opts: ["칼데라", "피오르드", "삼각주", "협곡"] },
+        { q: "그리스의 국기 색깔은?", a: "파란색과 흰색", opts: ["파란색과 흰색", "빨간색과 흰색", "초록색과 흰색", "노란색과 파란색"] },
+        { q: "그리스 신화에서 지혜와 전쟁의 여신은?", a: "아테나", opts: ["아테나", "아프로디테", "헤라", "아르테미스"] },
+        { q: "산토리니에서 유명한 와인의 포도 품종은?", a: "아시르티코", opts: ["아시르티코", "샤르도네", "리슬링", "소비뇽 블랑"] },
+        { q: "그리스의 공식 언어는?", a: "그리스어", opts: ["그리스어", "라틴어", "터키어", "알바니아어"] }
+      ],
+      "대만": [
+        { q: "타이페이의 유명한 101층 고층 빌딩의 이름은?", a: "타이페이 101", opts: ["타이페이 101", "타이페이 타워", "드래곤 타워", "아시아 센터"] },
+        { q: "대만의 공식 명칭은?", a: "중화민국", opts: ["중화민국", "중화인민공화국", "대만공화국", "포르모사"] },
+        { q: "대만에서 가장 유명한 야시장은?", a: "스린 야시장", opts: ["스린 야시장", "동대문 야시장", "오뎅 야시장", "밤바 야시장"] },
+        { q: "대만의 대표적인 음식 '쇼우파오'는 무엇인가요?", a: "찐빵", opts: ["찐빵", "덮밥", "국수", "볶음밥"] },
+        { q: "타이페이에 있는 국립 고궁 박물관은 어느 나라 유물을 주로 소장하고 있나요?", a: "중국", opts: ["중국", "일본", "한국", "인도"] },
+        { q: "대만의 화폐는?", a: "신 대만 달러", opts: ["신 대만 달러", "위안", "엔", "링깃"] },
+        { q: "대만의 인기 음료 '진주 밀크티'를 다른 말로?", a: "버블티", opts: ["버블티", "타피오카 워터", "보바 워터", "밀크 커피"] },
+        { q: "대만 동쪽 해안에 있는 아름다운 협곡은?", a: "타로코 협곡", opts: ["타로코 협곡", "그랜드 캐니언", "장가계", "이구아수"] },
+        { q: "대만의 수도는?", a: "타이페이", opts: ["타이페이", "타이중", "가오슝", "타이난"] },
+        { q: "대만이 옛날에 불렸던 이름은?", a: "포르모사", opts: ["포르모사", "마카오", "보르네오", "루손"] }
+      ],
+      "대한민국": [
+        { q: "서울의 대표 궁궐 이름은?", a: "경복궁", opts: ["경복궁", "창덕궁", "덕수궁", "창경궁"] },
+        { q: "한강을 가로지르는 서울의 다리 중 가장 유명한 것은?", a: "한강대교", opts: ["한강대교", "마포대교", "잠실대교", "청담대교"] },
+        { q: "서울의 현대 쇼핑 명소 '명동'이 있는 구는?", a: "중구", opts: ["중구", "강남구", "마포구", "용산구"] },
+        { q: "한국의 대표 음식이 아닌 것은?", a: "스시", opts: ["스시", "불고기", "비빔밥", "김치"] },
+        { q: "서울 야경을 볼 수 있는 유명한 타워는?", a: "N서울타워", opts: ["N서울타워", "롯데타워", "부산타워", "해운대 타워"] },
+        { q: "한국의 전통 민속촌이 서울 근교 어느 도시에 있나요?", a: "수원", opts: ["수원", "인천", "부산", "광주"] },
+        { q: "한국의 국보 1호는?", a: "숭례문", opts: ["숭례문", "훈민정음", "팔만대장경", "경복궁"] },
+        { q: "서울에서 열리는 유명한 봄 축제는?", a: "여의도 봄꽃 축제", opts: ["여의도 봄꽃 축제", "진해 벚꽃 축제", "함양 산삼 축제", "무주 반딧불 축제"] },
+        { q: "한국의 화폐 단위는?", a: "원(KRW)", opts: ["원(KRW)", "위안", "엔", "달러"] },
+        { q: "경복궁 안에 있는 유명한 연못은?", a: "경회루", opts: ["경회루", "아름못", "자경연", "향원정"] }
+      ],
+      "모로코": [
+        { q: "모로코 쉐프샤우엔이 유명한 이유는?", a: "파란색으로 칠해진 도시", opts: ["파란색으로 칠해진 도시", "황금 사원", "붉은 사막", "화이트 비치"] },
+        { q: "모로코의 수도는?", a: "라바트", opts: ["라바트", "마라케시", "카사블랑카", "페스"] },
+        { q: "사하라 사막이 있는 대륙은?", a: "아프리카", opts: ["아프리카", "아시아", "남아메리카", "오세아니아"] },
+        { q: "모로코의 공식 언어는?", a: "아랍어", opts: ["아랍어", "프랑스어", "스페인어", "포르투갈어"] },
+        { q: "모로코의 전통 의상 '젤라바'는 어떤 옷인가요?", a: "후드 달린 긴 로브", opts: ["후드 달린 긴 로브", "짧은 치마", "전통 한복", "비단 사리"] },
+        { q: "메르주가에서 체험할 수 있는 특별한 교통수단은?", a: "낙타", opts: ["낙타", "코끼리", "말", "당나귀"] },
+        { q: "모로코의 대표 도시 '마라케시'의 중심 광장 이름은?", a: "제마 엘-프나 광장", opts: ["제마 엘-프나 광장", "타흐리르 광장", "나스리 광장", "모하마드 광장"] },
+        { q: "모로코의 대표 음식 '타진'은 어떻게 요리하나요?", a: "뚜껑이 있는 도자기 냄비로 찜 요리", opts: ["뚜껑이 있는 도자기 냄비로 찜 요리", "기름에 튀김", "숯불에 구이", "날 것으로 먹음"] },
+        { q: "모로코의 화폐 단위는?", a: "디르함", opts: ["디르함", "리랄", "리나", "페소"] },
+        { q: "모로코 북쪽 바다는?", a: "지중해", opts: ["지중해", "홍해", "카리브해", "북해"] }
+      ],
+      "미국": [
+        { q: "뉴욕의 자유의 여신상은 어떤 나라가 선물했나요?", a: "프랑스", opts: ["프랑스", "영국", "이탈리아", "스페인"] },
+        { q: "라스베가스가 있는 주는?", a: "네바다", opts: ["네바다", "캘리포니아", "애리조나", "유타"] },
+        { q: "샌프란시스코의 유명한 붉은 다리 이름은?", a: "금문교", opts: ["금문교", "브루클린 다리", "베이 브릿지", "맨해튼 다리"] },
+        { q: "뉴욕 맨해튼의 세계적인 공원은?", a: "센트럴 파크", opts: ["센트럴 파크", "하이드 파크", "옐로스톤", "로얄 파크"] },
+        { q: "미국의 수도는?", a: "워싱턴 D.C.", opts: ["워싱턴 D.C.", "뉴욕", "로스앤젤레스", "시카고"] },
+        { q: "라스베가스의 유명한 거리 이름은?", a: "더 스트립", opts: ["더 스트립", "브로드웨이", "할리우드 블루바드", "선셋 대로"] },
+        { q: "미국 최초의 국립공원은?", a: "옐로스톤", opts: ["옐로스톤", "요세미티", "그랜드 캐니언", "아카디아"] },
+        { q: "뉴욕에 있는 세계 최대 금융 시장은?", a: "월스트리트", opts: ["월스트리트", "메인 스트리트", "파인 스트리트", "브로드 스트리트"] },
+        { q: "미국의 독립기념일은?", a: "7월 4일", opts: ["7월 4일", "6월 14일", "5월 30일", "8월 15일"] },
+        { q: "샌프란시스코의 유명한 구불구불한 도로는?", a: "롬바드 스트리트", opts: ["롬바드 스트리트", "미션 스트리트", "하이트 스트리트", "카스트로 스트리트"] }
+      ],
+      "볼리비아": [
+        { q: "우유니 소금사막은 세계에서 몇 번째로 큰 소금사막인가요?", a: "가장 큰", opts: ["가장 큰", "두 번째로 큰", "세 번째로 큰", "열 번째로 큰"] },
+        { q: "볼리비아의 수도는?", a: "수크레 (행정수도: 라파스)", opts: ["수크레 (행정수도: 라파스)", "부에노스아이레스", "리마", "산티아고"] },
+        { q: "우유니 소금사막은 어떤 자연현상으로 유명한가요?", a: "거울 반영", opts: ["거울 반영", "오로라", "토네이도", "백야"] },
+        { q: "볼리비아는 어느 대륙에 있나요?", a: "남아메리카", opts: ["남아메리카", "북아메리카", "아프리카", "아시아"] },
+        { q: "우유니 소금사막에서 자주 볼 수 있는 동물은?", a: "플라밍고", opts: ["플라밍고", "펭귄", "낙타", "알파카"] },
+        { q: "볼리비아의 화폐 단위는?", a: "볼리비아노", opts: ["볼리비아노", "페소", "레알", "솔"] },
+        { q: "우유니 소금사막은 어떻게 생겼나요?", a: "고대 호수가 증발해서 생겼다", opts: ["고대 호수가 증발해서 생겼다", "빙하가 녹아서 생겼다", "화산 폭발로 생겼다", "바다가 말라서 생겼다"] },
+        { q: "볼리비아에서 주로 쓰이는 언어는?", a: "스페인어", opts: ["스페인어", "포르투갈어", "케추아어", "영어"] },
+        { q: "우유니 소금사막의 넓이는 약?", a: "10,000 km²", opts: ["10,000 km²", "1,000 km²", "50,000 km²", "100 km²"] },
+        { q: "볼리비아와 국경을 맞대지 않는 나라는?", a: "베네수엘라", opts: ["베네수엘라", "페루", "브라질", "아르헨티나"] }
+      ],
+      "스위스": [
+        { q: "체르마트 근처에 있는 유명한 산은?", a: "마테호른", opts: ["마테호른", "몽블랑", "융프라우", "몬테로사"] },
+        { q: "스위스의 공식 언어가 아닌 것은?", a: "영어", opts: ["영어", "독일어", "프랑스어", "이탈리아어"] },
+        { q: "스위스의 수도는?", a: "베른", opts: ["베른", "취리히", "제네바", "바젤"] },
+        { q: "스위스 초콜릿으로 유명한 브랜드는?", a: "린트", opts: ["린트", "하리보", "킨더", "페레로"] },
+        { q: "스위스 국기의 모양은?", a: "빨간 바탕에 흰 십자가", opts: ["빨간 바탕에 흰 십자가", "흰 바탕에 빨간 십자가", "파란 바탕에 흰 별", "초록 바탕에 흰 초승달"] },
+        { q: "체르마트에서 차량 이용이 불가능한 이유는?", a: "친환경 무차량 도시이기 때문", opts: ["친환경 무차량 도시이기 때문", "도로가 없어서", "가격이 너무 비싸서", "법으로 금지되어서"] },
+        { q: "스위스의 시계 산업이 세계적으로 유명한 도시는?", a: "라쇼드퐁", opts: ["라쇼드퐁", "제네바", "취리히", "루체른"] },
+        { q: "스위스에서 유명한 치즈 요리 '퐁뒤'는 무엇인가요?", a: "녹인 치즈에 빵 찍어 먹기", opts: ["녹인 치즈에 빵 찍어 먹기", "치즈 케이크", "치즈 수프", "치즈 피자"] },
+        { q: "스위스 알프스의 유명한 관광지 '융프라우요흐'의 별명은?", a: "유럽의 지붕", opts: ["유럽의 지붕", "알프스의 여왕", "하늘의 정원", "눈의 왕국"] },
+        { q: "스위스의 화폐 단위는?", a: "스위스 프랑", opts: ["스위스 프랑", "유로", "파운드", "달러"] }
+      ],
+      "스페인": [
+        { q: "세비야의 유명한 춤은?", a: "플라멩코", opts: ["플라멩코", "탱고", "살사", "삼바"] },
+        { q: "스페인의 수도는?", a: "마드리드", opts: ["마드리드", "바르셀로나", "세비야", "발렌시아"] },
+        { q: "가우디가 설계한 바르셀로나의 유명한 성당은?", a: "사그라다 파밀리아", opts: ["사그라다 파밀리아", "알함브라 궁전", "세비야 대성당", "몬테세라트"] },
+        { q: "스페인의 토마토 축제 '라 토마티나'가 열리는 도시는?", a: "부뇰", opts: ["부뇰", "발렌시아", "마드리드", "세비야"] },
+        { q: "스페인의 대표 음식 '파에야'는 어떤 음식인가요?", a: "볶음밥 요리", opts: ["볶음밥 요리", "빵 요리", "생선 찜", "고기 수프"] },
+        { q: "스페인의 투우 경기가 열리는 경기장을 무엇이라 하나요?", a: "플라사 데 토로스", opts: ["플라사 데 토로스", "아레나", "콜로세움", "불링"] },
+        { q: "세비야에 있는 스페인에서 가장 큰 성당은?", a: "세비야 대성당", opts: ["세비야 대성당", "부르고스 대성당", "톨레도 대성당", "살라망카 대성당"] },
+        { q: "스페인의 화폐는?", a: "유로", opts: ["유로", "페세타", "파운드", "프랑"] },
+        { q: "스페인의 대표 냉수프 '가스파초'의 주 재료는?", a: "토마토", opts: ["토마토", "오이", "가지", "양파"] },
+        { q: "스페인 남부의 이슬람 문화 유적 '알함브라 궁전'이 있는 도시는?", a: "그라나다", opts: ["그라나다", "세비야", "코르도바", "말라가"] }
+      ],
+      "슬로베니아": [
+        { q: "블레드 섬의 중앙에 있는 건물은?", a: "교회", opts: ["교회", "성", "박물관", "공원"] },
+        { q: "슬로베니아의 수도는?", a: "류블랴나", opts: ["류블랴나", "마리보르", "코페르", "크란"] },
+        { q: "블레드 호수가 있는 나라는?", a: "슬로베니아", opts: ["슬로베니아", "크로아티아", "오스트리아", "헝가리"] },
+        { q: "슬로베니아의 화폐는?", a: "유로", opts: ["유로", "쿠나", "포린트", "크로네"] },
+        { q: "블레드 호수에서 유명한 전통 배는?", a: "플레트나", opts: ["플레트나", "곤돌라", "카약", "범선"] },
+        { q: "슬로베니아의 공식 언어는?", a: "슬로베니아어", opts: ["슬로베니아어", "크로아티아어", "세르비아어", "체코어"] },
+        { q: "슬로베니아에서 유명한 카르스트 동굴은?", a: "포스토이나 동굴", opts: ["포스토이나 동굴", "알타미라 동굴", "래스코 동굴", "아레네 동굴"] },
+        { q: "블레드 호수에서 매년 열리는 경기는?", a: "국제 조정 대회", opts: ["국제 조정 대회", "수영 대회", "카누 대회", "윈드서핑 대회"] },
+        { q: "슬로베니아는 어느 반도에 위치해 있나요?", a: "발칸 반도", opts: ["발칸 반도", "이베리아 반도", "스칸디나비아 반도", "이탈리아 반도"] },
+        { q: "블레드 지역의 전통 케이크는?", a: "크렘나 레지나 (크림 케이크)", opts: ["크렘나 레지나 (크림 케이크)", "슈트루들", "사허토르테", "뒤넨"] }
+      ],
+      "아이슬란드": [
+        { q: "아이슬란드에서 볼 수 있는 자연 현상 중 하나는?", a: "오로라", opts: ["오로라", "토네이도", "허리케인", "사막 폭풍"] },
+        { q: "아이슬란드의 수도는?", a: "레이캬비크", opts: ["레이캬비크", "아쿠레이리", "케플라비크", "보르가르뇌스"] },
+        { q: "키르큐펠 산의 모양은?", a: "삼각형", opts: ["삼각형", "원뿔형", "평평한 형", "불규칙형"] },
+        { q: "아이슬란드에서 유명한 온천은?", a: "블루 라군", opts: ["블루 라군", "레드 스파", "그린 풀", "화이트 라군"] },
+        { q: "아이슬란드의 공식 언어는?", a: "아이슬란드어", opts: ["아이슬란드어", "노르웨이어", "덴마크어", "스웨덴어"] },
+        { q: "아이슬란드는 어떤 에너지를 주로 사용하나요?", a: "지열 에너지", opts: ["지열 에너지", "석유", "석탄", "원자력"] },
+        { q: "아이슬란드의 화폐는?", a: "아이슬란드 크로나", opts: ["아이슬란드 크로나", "유로", "노르웨이 크로네", "덴마크 크로네"] },
+        { q: "아이슬란드의 유명한 폭포 중 하나는?", a: "굴포스", opts: ["굴포스", "나이아가라", "빅토리아", "이구아수"] },
+        { q: "아이슬란드에서 흔히 볼 수 있는 동물은?", a: "퍼핀", opts: ["퍼핀", "펭귄", "북극곰", "순록"] },
+        { q: "아이슬란드의 하지 때 태양이 지지 않는 현상은?", a: "백야", opts: ["백야", "극야", "춘분", "추분"] }
+      ],
+      "오스트리아": [
+        { q: "비엔나 필하모닉 오케스트라가 있는 도시는?", a: "빈", opts: ["빈", "잘츠부르크", "그라츠", "린츠"] },
+        { q: "오스트리아의 수도는?", a: "빈", opts: ["빈", "잘츠부르크", "그라츠", "인스브루크"] },
+        { q: "모차르트가 태어난 오스트리아의 도시는?", a: "잘츠부르크", opts: ["잘츠부르크", "빈", "그라츠", "린츠"] },
+        { q: "빈에 있는 유명한 궁전은?", a: "쇤브룬 궁전", opts: ["쇤브룬 궁전", "베르사유 궁전", "버킹엄 궁전", "상수시 궁전"] },
+        { q: "오스트리아의 화폐는?", a: "유로", opts: ["유로", "스위스 프랑", "체코 코루나", "헝가리 포린트"] },
+        { q: "오스트리아의 대표 케이크는?", a: "자허토르테", opts: ["자허토르테", "슈트루들", "린저 쿠키", "구겔호프"] },
+        { q: "빈에 있는 미술사 박물관의 독일어 이름은?", a: "쿤스트히스토리셰스 무제움", opts: ["쿤스트히스토리셰스 무제움", "루브르", "메트로폴리탄", "테이트 모던"] },
+        { q: "오스트리아에서 유명한 겨울 스포츠는?", a: "스키", opts: ["스키", "아이스하키", "컬링", "봅슬레이"] },
+        { q: "오스트리아의 공식 언어는?", a: "독일어", opts: ["독일어", "오스트리아어", "프랑스어", "이탈리아어"] },
+        { q: "빈에서 매년 열리는 유명한 무도회는?", a: "빈 오페라 무도회", opts: ["빈 오페라 무도회", "빈 새해 무도회", "빈 귀족 무도회", "빈 왈츠 무도회"] }
+      ],
+      "이탈리아": [
+        { q: "이탈리아 돌로미티는 어느 지역에 있나요?", a: "이탈리아 북부 알프스", opts: ["이탈리아 북부 알프스", "시칠리아", "사르데냐", "토스카나"] },
+        { q: "로마의 대표 관광지 콜로세움은 언제 지어졌나요?", a: "AD 72-80년", opts: ["AD 72-80년", "BC 100년", "AD 200년", "AD 500년"] },
+        { q: "포지타노가 위치한 해안의 이름은?", a: "아말피 해안", opts: ["아말피 해안", "리비에라 해안", "살레르노 해안", "소렌토 해안"] },
+        { q: "피렌체에 있는 미술 박물관은?", a: "우피치 미술관", opts: ["우피치 미술관", "보르게세 미술관", "브레라 미술관", "카포디몬테 미술관"] },
+        { q: "이탈리아의 수도는?", a: "로마", opts: ["로마", "밀라노", "나폴리", "피렌체"] },
+        { q: "이탈리아의 대표 음식이 아닌 것은?", a: "타코", opts: ["타코", "피자", "파스타", "젤라토"] },
+        { q: "베네치아의 전통 배를 무엇이라 하나요?", a: "곤돌라", opts: ["곤돌라", "페리", "바르카", "카이크"] },
+        { q: "다빈치의 '최후의 만찬' 벽화가 있는 도시는?", a: "밀라노", opts: ["밀라노", "로마", "피렌체", "베네치아"] },
+        { q: "이탈리아의 화폐는?", a: "유로", opts: ["유로", "리라", "프랑", "파운드"] },
+        { q: "피렌체의 유명한 다리 '폰테 베키오'의 특징은?", a: "다리 위에 상점이 있다", opts: ["다리 위에 상점이 있다", "세계에서 가장 길다", "유리로 만들어졌다", "물 위에 떠있다"] }
+      ],
+      "일본": [
+        { q: "후지산의 높이는 약?", a: "3,776m", opts: ["3,776m", "4,000m", "2,500m", "5,000m"] },
+        { q: "교토의 유명한 금각사의 정식 이름은?", a: "로쿠온지", opts: ["로쿠온지", "킨카쿠지", "긴카쿠지", "료안지"] },
+        { q: "오사카의 대표 음식은?", a: "타코야키", opts: ["타코야키", "스시", "라멘", "우동"] },
+        { q: "가마쿠라의 유명한 동상은?", a: "대불(大佛)", opts: ["대불(大佛)", "자유의 여신상", "청동 검", "돌 사자"] },
+        { q: "삿포로에서 열리는 유명한 축제는?", a: "눈 축제", opts: ["눈 축제", "벚꽃 축제", "불꽃 축제", "등불 축제"] },
+        { q: "비에이는 어느 섬에 있나요?", a: "홋카이도", opts: ["홋카이도", "혼슈", "규슈", "시코쿠"] },
+        { q: "도쿄의 가장 유명한 전통 지역은?", a: "아사쿠사", opts: ["아사쿠사", "시부야", "신주쿠", "하라주쿠"] },
+        { q: "일본의 전통 의상을 무엇이라 하나요?", a: "기모노", opts: ["기모노", "유카타", "하카마", "모두 포함"] },
+        { q: "일본의 화폐는?", a: "엔", opts: ["엔", "위안", "원", "달러"] },
+        { q: "일본에서 세계 유산으로 지정된 후지산이 있는 현은?", a: "야마나시현·시즈오카현", opts: ["야마나시현·시즈오카현", "도쿄도", "나가노현", "아이치현"] }
+      ],
+      "체코": [
+        { q: "프라하의 상징적인 다리는?", a: "카를교", opts: ["카를교", "갈라 다리", "프라하 다리", "블타바 다리"] },
+        { q: "체코의 수도는?", a: "프라하", opts: ["프라하", "브르노", "오스트라바", "플젠"] },
+        { q: "프라하 성이 내려다보이는 강 이름은?", a: "블타바강", opts: ["블타바강", "다뉴브강", "엘베강", "오데르강"] },
+        { q: "체코의 유명한 맥주 도시는?", a: "플젠", opts: ["플젠", "프라하", "브르노", "체스케 부데요비체"] },
+        { q: "프라하에 있는 유명한 시계탑은?", a: "천문 시계(오를로이)", opts: ["천문 시계(오를로이)", "빅벤", "프라하 시계탑", "성 비투스 탑"] },
+        { q: "체코의 공식 언어는?", a: "체코어", opts: ["체코어", "슬로바키아어", "폴란드어", "독일어"] },
+        { q: "체코의 화폐는?", a: "체코 코루나", opts: ["체코 코루나", "유로", "폴란드 즐로티", "헝가리 포린트"] },
+        { q: "프라하 구시가지 광장에서 매시 정각에 볼 수 있는 것은?", a: "천문 시계 퍼레이드", opts: ["천문 시계 퍼레이드", "위병 교대식", "불꽃 놀이", "음악 공연"] },
+        { q: "세계에서 가장 큰 성채로 기록된 성은?", a: "프라하 성", opts: ["프라하 성", "드라큘라 성", "노이슈반슈타인 성", "에든버러 성"] },
+        { q: "체코의 대표 음식 '스베치코바'는?", a: "쇠고기 스튜", opts: ["쇠고기 스튜", "돼지고기 구이", "생선 요리", "채소 수프"] }
+      ],
+      "캐나다": [
+        { q: "토론토의 유명한 타워는?", a: "CN 타워", opts: ["CN 타워", "스카이 타워", "캐나다 타워", "레이크 타워"] },
+        { q: "캐나다의 수도는?", a: "오타와", opts: ["오타와", "토론토", "밴쿠버", "몬트리올"] },
+        { q: "캐나다와 미국의 국경에 있는 세계적인 폭포는?", a: "나이아가라 폭포", opts: ["나이아가라 폭포", "이구아수 폭포", "빅토리아 폭포", "트레스 마리아스 폭포"] },
+        { q: "캐나다의 공식 언어는?", a: "영어와 프랑스어", opts: ["영어와 프랑스어", "영어만", "프랑스어만", "영어와 스페인어"] },
+        { q: "캐나다의 화폐는?", a: "캐나다 달러", opts: ["캐나다 달러", "미국 달러", "호주 달러", "뉴질랜드 달러"] },
+        { q: "캐나다의 국가 상징 동물은?", a: "비버", opts: ["비버", "곰", "사슴", "늑대"] },
+        { q: "토론토가 속한 주는?", a: "온타리오", opts: ["온타리오", "퀘벡", "브리티시 컬럼비아", "앨버타"] },
+        { q: "캐나다의 단풍나무 잎은 무슨 의미를 가지나요?", a: "국가의 상징", opts: ["국가의 상징", "평화의 상징", "용기의 상징", "자유의 상징"] },
+        { q: "캐나다의 로키산맥에 있는 유명한 국립공원은?", a: "밴프 국립공원", opts: ["밴프 국립공원", "재스퍼 국립공원", "요호 국립공원", "쿠테네이 국립공원"] },
+        { q: "캐나다에서 가장 인구가 많은 도시는?", a: "토론토", opts: ["토론토", "몬트리올", "밴쿠버", "캘거리"] }
+      ],
+      "쿠바": [
+        { q: "아바나의 유명한 복고풍 자동차는?", a: "1950년대 미국 클래식카", opts: ["1950년대 미국 클래식카", "1970년대 소련 차", "1980년대 일본 차", "1990년대 유럽 차"] },
+        { q: "쿠바의 수도는?", a: "아바나", opts: ["아바나", "산티아고", "트리니다드", "시엔푸에고스"] },
+        { q: "쿠바는 어느 바다에 있나요?", a: "카리브해", opts: ["카리브해", "대서양", "태평양", "멕시코만"] },
+        { q: "쿠바의 공식 언어는?", a: "스페인어", opts: ["스페인어", "포르투갈어", "영어", "프랑스어"] },
+        { q: "쿠바의 대표 음악 장르는?", a: "살사", opts: ["살사", "탱고", "삼바", "보사노바"] },
+        { q: "쿠바의 화폐는?", a: "쿠바 페소", opts: ["쿠바 페소", "달러", "유로", "파운드"] },
+        { q: "쿠바에서 유명한 시가의 주 생산지는?", a: "피나르 델 리오", opts: ["피나르 델 리오", "아바나", "산티아고", "올긴"] },
+        { q: "쿠바의 혁명가 체 게바라의 원래 국적은?", a: "아르헨티나", opts: ["아르헨티나", "쿠바", "베네수엘라", "볼리비아"] },
+        { q: "쿠바의 유명한 칵테일은?", a: "모히토", opts: ["모히토", "마가리타", "다이키리", "모두 쿠바 칵테일"] },
+        { q: "쿠바가 미국과 가장 가까운 거리는?", a: "약 180km", opts: ["약 180km", "약 1,800km", "약 18km", "약 18,000km"] }
+      ],
+      "크로아티아": [
+        { q: "두브로브니크는 영국 드라마 '왕좌의 게임'에서 어떤 도시로 묘사되었나요?", a: "킹스랜딩", opts: ["킹스랜딩", "드레드포트", "선스피어", "블랙워터베이"] },
+        { q: "크로아티아의 수도는?", a: "자그레브", opts: ["자그레브", "두브로브니크", "스플리트", "리예카"] },
+        { q: "두브로브니크의 별명은?", a: "아드리아의 진주", opts: ["아드리아의 진주", "지중해의 여왕", "발칸의 보석", "유럽의 낙원"] },
+        { q: "크로아티아의 화폐는?", a: "유로", opts: ["유로", "쿠나", "디나르", "포린트"] },
+        { q: "크로아티아에 있는 유명한 국립공원은?", a: "플리트비체 국립공원", opts: ["플리트비체 국립공원", "파르나소스 국립공원", "두브로브니크 국립공원", "달마티아 국립공원"] },
+        { q: "크로아티아 해안은 어느 바다에 접해 있나요?", a: "아드리아해", opts: ["아드리아해", "지중해", "에게해", "이오니아해"] },
+        { q: "크로아티아의 공식 언어는?", a: "크로아티아어", opts: ["크로아티아어", "세르비아어", "슬로베니아어", "보스니아어"] },
+        { q: "두브로브니크 성벽의 총 길이는 약?", a: "약 2km", opts: ["약 2km", "약 5km", "약 10km", "약 20km"] },
+        { q: "크로아티아에서 발명된 의상 아이템은?", a: "넥타이", opts: ["넥타이", "청바지", "운동화", "선글라스"] },
+        { q: "크로아티아의 유명한 섬은?", a: "흐바르 섬", opts: ["흐바르 섬", "코르퀼라 섬", "브라치 섬", "모두 유명함"] }
+      ],
+      "튀르키예": [
+        { q: "카파도키아의 유명한 관광 체험은?", a: "열기구 탑승", opts: ["열기구 탑승", "낙타 타기", "스카이다이빙", "번지점프"] },
+        { q: "이스탄불에 있는 유명한 블루 모스크의 다른 이름은?", a: "술탄 아흐메드 자미", opts: ["술탄 아흐메드 자미", "아야 소피아", "돌마바흐체", "탁심 모스크"] },
+        { q: "튀르키예의 수도는?", a: "앙카라", opts: ["앙카라", "이스탄불", "이즈미르", "부르사"] },
+        { q: "이스탄불은 두 대륙에 걸쳐 있습니다. 어느 두 대륙인가요?", a: "유럽과 아시아", opts: ["유럽과 아시아", "아시아와 아프리카", "유럽과 아프리카", "유럽과 오세아니아"] },
+        { q: "카파도키아의 독특한 지형은 무엇으로 만들어졌나요?", a: "화산재와 용암", opts: ["화산재와 용암", "석회암 침식", "빙하 침식", "사막 모래"] },
+        { q: "튀르키예의 화폐는?", a: "리라", opts: ["리라", "디르함", "리얄", "디나르"] },
+        { q: "튀르키예의 대표 음식 '케밥'의 종류가 아닌 것은?", a: "스시", opts: ["스시", "되네르 케밥", "샤시릭", "시시 케밥"] },
+        { q: "이스탄불의 대표 시장은?", a: "그랜드 바자르", opts: ["그랜드 바자르", "수크 엘-마나크", "바자르 이스탄불", "카팔르 차르슈"] },
+        { q: "튀르키예의 공식 언어는?", a: "터키어", opts: ["터키어", "아랍어", "페르시아어", "쿠르드어"] },
+        { q: "아야 소피아는 원래 무엇이었나요?", a: "기독교 대성당", opts: ["기독교 대성당", "이슬람 모스크", "로마 신전", "궁전"] }
+      ],
+      "페로 제도": [
+        { q: "페로 제도는 어느 나라의 자치령인가요?", a: "덴마크", opts: ["덴마크", "노르웨이", "영국", "아이슬란드"] },
+        { q: "페로 제도의 수도는?", a: "토르스하운", opts: ["토르스하운", "뵈르", "클락스빅", "알스테인"] },
+        { q: "페로 제도는 어느 바다에 위치해 있나요?", a: "북대서양", opts: ["북대서양", "북해", "발틱해", "노르웨이해"] },
+        { q: "페로 제도의 공용어는?", a: "페로어와 덴마크어", opts: ["페로어와 덴마크어", "영어", "노르웨이어", "아이슬란드어"] },
+        { q: "페로 제도의 지형적 특징은?", a: "깎아지른 절벽과 피오르드", opts: ["깎아지른 절벽과 피오르드", "사막과 평원", "정글과 열대우림", "화산과 온천"] },
+        { q: "페로 제도의 유명한 새는?", a: "퍼핀", opts: ["퍼핀", "독수리", "황새", "물개"] },
+        { q: "페로 제도의 화폐는?", a: "덴마크 크로네", opts: ["덴마크 크로네", "유로", "영국 파운드", "페로 크로네"] },
+        { q: "페로 제도는 몇 개의 섬으로 이루어져 있나요?", a: "18개", opts: ["18개", "10개", "30개", "50개"] },
+        { q: "페로 제도의 전통 스포츠는?", a: "조정", opts: ["조정", "축구", "아이스하키", "스키"] },
+        { q: "페로 제도의 독특한 경관으로 유명한 바다 위의 호수 이름은?", a: "쇠르보그스바튼 호수", opts: ["쇠르보그스바튼 호수", "블루 라군", "가사달루르 폭포", "페로 온천"] }
+      ],
+      "페루": [
+        { q: "마추픽추는 어느 문명의 유적인가요?", a: "잉카 문명", opts: ["잉카 문명", "마야 문명", "아즈텍 문명", "올메카 문명"] },
+        { q: "페루의 수도는?", a: "리마", opts: ["리마", "쿠스코", "아레키파", "트루히요"] },
+        { q: "마추픽추의 해발 고도는 약?", a: "2,430m", opts: ["2,430m", "1,000m", "4,000m", "5,500m"] },
+        { q: "페루의 유명한 음식 '세비체'는?", a: "생선 초절임", opts: ["생선 초절임", "고기 스튜", "채소 볶음", "찐빵"] },
+        { q: "마추픽추가 세계에 알려진 계기는?", a: "1911년 하이럼 빙엄의 발견", opts: ["1911년 하이럼 빙엄의 발견", "1950년 위성 사진", "1800년 스페인 탐험가", "2000년 고고학 발굴"] },
+        { q: "페루의 화폐는?", a: "솔", opts: ["솔", "페소", "볼리비아노", "달러"] },
+        { q: "페루와 볼리비아의 경계에 있는 호수는?", a: "티티카카 호수", opts: ["티티카카 호수", "우유니 호수", "아마존 호수", "이파나 호수"] },
+        { q: "페루의 공식 언어는?", a: "스페인어", opts: ["스페인어", "케추아어만", "포르투갈어", "스페인어와 케추아어"] },
+        { q: "페루에서 발원하는 세계에서 가장 긴 강은?", a: "아마존강", opts: ["아마존강", "나일강", "미시시피강", "오리노코강"] },
+        { q: "마추픽추 근처의 옛 잉카 수도는?", a: "쿠스코", opts: ["쿠스코", "리마", "아야쿠초", "아레키파"] }
+      ],
+      "포르투갈": [
+        { q: "포르투의 대표 음식 '프란세지냐'는?", a: "두꺼운 샌드위치에 소스를 끼얹은 음식", opts: ["두꺼운 샌드위치에 소스를 끼얹은 음식", "생선 스튜", "바칼라우 (대구 요리)", "달콤한 타르트"] },
+        { q: "포르투갈의 수도는?", a: "리스본", opts: ["리스본", "포르투", "파루", "코임브라"] },
+        { q: "포르투갈의 유명한 전통 음악 장르는?", a: "파두", opts: ["파두", "플라멩코", "탱고", "볼레로"] },
+        { q: "포르투갈의 화폐는?", a: "유로", opts: ["유로", "에스쿠도", "파운드", "달러"] },
+        { q: "포르투에 있는 유명한 서점은?", a: "렐로 서점", opts: ["렐로 서점", "리스본 서점", "파도 서점", "아줄레호 서점"] },
+        { q: "포르투를 관통하는 강은?", a: "도루강", opts: ["도루강", "테주강", "미뉴강", "사도강"] },
+        { q: "포르투갈의 전통 타일 이름은?", a: "아줄레호", opts: ["아줄레호", "모자이크", "세라믹", "프레스코"] },
+        { q: "포르투갈이 가장 먼저 개척한 항로는?", a: "인도 항로", opts: ["인도 항로", "아메리카 항로", "아프리카 항로", "아시아 항로"] },
+        { q: "포르투갈의 유명한 달걀 타르트는?", a: "파스텔 데 나타", opts: ["파스텔 데 나타", "크루아상", "에클레르", "마카롱"] },
+        { q: "포르투갈에서 가장 유명한 와인 산지는?", a: "도루 밸리", opts: ["도루 밸리", "알렌테주", "비뇨 베르데", "다웅"] }
+      ],
+      "프랑스": [
+        { q: "파리의 에펠탑이 지어진 연도는?", a: "1889년", opts: ["1889년", "1900년", "1850년", "1920년"] },
+        { q: "프랑스의 수도는?", a: "파리", opts: ["파리", "리옹", "마르세유", "보르도"] },
+        { q: "루브르 박물관에 있는 가장 유명한 작품은?", a: "모나리자", opts: ["모나리자", "비너스 드 밀로", "사모트라케의 니케", "성모자"] },
+        { q: "프랑스의 화폐는?", a: "유로", opts: ["유로", "프랑", "마르크", "파운드"] },
+        { q: "파리의 유명한 성당 '노트르담 대성당'은 어떤 양식인가요?", a: "고딕 양식", opts: ["고딕 양식", "바로크 양식", "로마네스크 양식", "르네상스 양식"] },
+        { q: "프랑스 혁명이 일어난 연도는?", a: "1789년", opts: ["1789년", "1776년", "1800년", "1830년"] },
+        { q: "파리의 유명한 쇼핑 거리는?", a: "샹젤리제", opts: ["샹젤리제", "몽마르트르", "마레", "레알"] },
+        { q: "프랑스의 대표 음식이 아닌 것은?", a: "타코", opts: ["타코", "크로아상", "크레페", "부야베스"] },
+        { q: "파리에 있는 유명한 미술관 '오르세 미술관'의 특징은?", a: "옛 기차역을 개조한 미술관", opts: ["옛 기차역을 개조한 미술관", "루이 14세가 세운 미술관", "세계에서 가장 큰 미술관", "현대 미술 전문 미술관"] },
+        { q: "프랑스의 국가(National Anthem)는?", a: "라 마르세예즈", opts: ["라 마르세예즈", "갓 세이브 더 킹", "베토벤 9번 교향곡", "국제가"] }
+      ],
+      "헝가리": [
+        { q: "부다페스트는 어떤 두 도시가 합쳐진 이름인가요?", a: "부다와 페스트", opts: ["부다와 페스트", "부다와 다뉴브", "헝가리와 페스트", "마자르와 부다"] },
+        { q: "헝가리의 수도는?", a: "부다페스트", opts: ["부다페스트", "데브레첸", "미슈콜츠", "에게르"] },
+        { q: "부다페스트를 가로지르는 강은?", a: "다뉴브강", opts: ["다뉴브강", "테미셰강", "라바강", "드라바강"] },
+        { q: "헝가리의 화폐는?", a: "포린트", opts: ["포린트", "유로", "코루나", "달러"] },
+        { q: "헝가리의 대표 음식 '구야시'는?", a: "소고기 파프리카 스튜", opts: ["소고기 파프리카 스튜", "생선 수프", "닭고기 구이", "돼지고기 볶음"] },
+        { q: "부다페스트에 있는 유명한 온천은?", a: "세체니 온천", opts: ["세체니 온천", "부다 온천", "페스트 온천", "다뉴브 온천"] },
+        { q: "헝가리의 공식 언어는?", a: "헝가리어(마자르어)", opts: ["헝가리어(마자르어)", "체코어", "폴란드어", "루마니아어"] },
+        { q: "부다페스트의 유명한 박물관 '헝가리 국립 박물관'이 소장한 것은?", a: "헝가리 역사 유물", opts: ["헝가리 역사 유물", "현대 미술", "자연사 표본", "로마 유물"] },
+        { q: "헝가리가 유럽에서 특별한 이유는?", a: "아시아계 언어(우랄어족)를 쓰는 유럽 국가", opts: ["아시아계 언어(우랄어족)를 쓰는 유럽 국가", "유일한 섬나라", "가장 작은 나라", "유일한 사막 보유"] },
+        { q: "루빅스 큐브를 발명한 나라는?", a: "헝가리", opts: ["헝가리", "독일", "일본", "미국"] }
+      ],
+      "홍콩": [
+        { q: "홍콩의 유명한 야경을 볼 수 있는 산은?", a: "빅토리아 피크", opts: ["빅토리아 피크", "태평산", "라이온 록", "캐슬 피크"] },
+        { q: "홍콩은 어느 나라의 특별행정구인가요?", a: "중국", opts: ["중국", "영국", "포르투갈", "독립국"] },
+        { q: "홍콩의 공식 언어는?", a: "광둥어와 영어", opts: ["광둥어와 영어", "만다린어", "영어만", "광둥어만"] },
+        { q: "홍콩의 화폐는?", a: "홍콩 달러", opts: ["홍콩 달러", "중국 위안", "영국 파운드", "미국 달러"] },
+        { q: "홍콩에서 유명한 2층 버스는?", a: "트램", opts: ["트램", "버스", "메트로", "케이블카"] },
+        { q: "홍콩의 유명한 음식 '딤섬'이란?", a: "작은 만두와 요리를 여럿 시켜 먹는 방식", opts: ["작은 만두와 요리를 여럿 시켜 먹는 방식", "국수 요리", "볶음밥", "샤브샤브"] },
+        { q: "홍콩에서 가장 유명한 쇼핑 지역은?", a: "침사추이", opts: ["침사추이", "코즈웨이 베이", "몽콕", "완차이"] },
+        { q: "홍콩이 영국에서 중국으로 반환된 연도는?", a: "1997년", opts: ["1997년", "1985년", "2000년", "2047년"] },
+        { q: "홍콩의 유명한 페리는?", a: "스타 페리", opts: ["스타 페리", "빅토리아 페리", "구룡 페리", "홍콩 크루즈"] },
+        { q: "홍콩에서 가장 높은 건물은?", a: "인터내셔널 커머스 센터", opts: ["인터내셔널 커머스 센터", "HSBC 빌딩", "센트럴 플라자", "더 원"] }
+      ]
+    };
+
+    /* ============================================================
+       GAME STATE
+       ============================================================ */
+    let gameState = {
+      p1: { boardId: 'board-p1', pieces: [], domElements: [], isWinner: false, quizActive: false },
+      p2: { boardId: 'board-p2', pieces: [], domElements: [], isWinner: false, quizActive: false },
+      imgData: null,
+      imgRatio: 1,
+      imgReady: false,
+      isPlaying: false,
+      gridSize: 3,
+      timeLimit: 180,
+      timeRemaining: 180,
+      timeElapsed: 0,
+      timerIntv: null,
+      quizData: null
+    };
+
+    let selectedGrid = 3;
+    let selectedTime = 180;
+    let currentMode = 'random';
+    let selectedGalleryItem = null;
+    let mapInstance = null;
+
+    /* ============================================================
+       APP HEIGHT FIX
+       ============================================================ */
+    function setAppHeight() {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    }
+    window.addEventListener('resize', () => { setAppHeight(); resizeBoards(); });
+    setAppHeight();
+
+    /* ============================================================
+       FULLSCREEN
+       ============================================================ */
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => { });
+      } else {
+        document.exitFullscreen().catch(() => { });
+      }
+    }
+
+    /* ============================================================
+       AUDIO ENGINE
+       ============================================================ */
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      playTone(freq, type, vol, dur) {
+        if (!this.ctx) return;
+        try {
+          const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+          o.connect(g); g.connect(this.ctx.destination);
+          o.type = type; o.frequency.value = freq;
+          g.gain.setValueAtTime(vol, this.ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+          o.start(); o.stop(this.ctx.currentTime + dur);
+        } catch (e) { }
+      },
+      playClack() { this.playTone(600, 'sine', 0.08, 0.08); },
+      playStart() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.1, 0.2), i * 100)); },
+      playFanfare() {
+        const melody = [523, 659, 784, 1046, 784, 1046, 1318];
+        melody.forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.12, 0.25), i * 130));
+      }
+    };
+
+    /* ============================================================
+       TABS
+       ============================================================ */
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+      currentMode = tabId === 'tab-random' ? 'random' : 'select';
+      if (tabId === 'tab-select') initGallery();
+    }
+
+    /* ============================================================
+       SETTINGS
+       ============================================================ */
+    function selectTime(t, btn) {
+      selectedTime = t;
+      document.querySelectorAll('#time-options .opt-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function selectGrid(g, btn) {
+      selectedGrid = g;
+      document.querySelectorAll('#grid-options .opt-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    /* ============================================================
+       GALLERY
+       ============================================================ */
+    function initGallery() {
+      const grid = document.getElementById('gallery-grid-cities');
+      grid.innerHTML = '';
+      cityDB.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'gallery-item' + (selectedGalleryItem && selectedGalleryItem.file === item.file ? ' active' : '');
+        const imgUrl = `img/${item.file}`;
+        
+        // Translate city & country in select gallery if not Korean
+        const isKo = window.lsCurrentLang === 'ko';
+        const displayCity = isKo ? item.city : (item.cityEn || item.city);
+        const displayCountry = isKo ? item.country : (item.countryEn || item.country);
+        
+        div.innerHTML = `
+      <img src="${imgUrl}" alt="${displayCity}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'72\\'><rect fill=\\'%23ddd\\' width=\\'100\\' height=\\'72\\'/><text x=\\'50\\' y=\\'40\\' text-anchor=\\'middle\\' font-size=\\'12\\' fill=\\'%23999\\'>${item.flag}</text></svg>'">
+      <div class="g-title">${item.flag} ${displayCity}</div>
+      <div class="g-country">${displayCountry}</div>
+    `;
+        div.onclick = () => {
+          document.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('active'));
+          div.classList.add('active');
+          selectedGalleryItem = { ...item, url: imgUrl, title: displayCity, displayName: `${item.flag} ${displayCountry} · ${displayCity}` };
+        };
+        grid.appendChild(div);
+      });
+    }
+
+    /* ============================================================
+       MAP SEQUENCE
+       ============================================================ */
+    /* ============================================================
+       PLANE SOUND via Web Audio API
+       ============================================================ */
+    function playPlaneSound() {
+      AudioEngine.init();
+      if (!AudioEngine.ctx) return;
+      try {
+        const ctx = AudioEngine.ctx;
+        // Engine rumble: low-freq oscillator
+        const bufferSize = ctx.sampleRate * 0.8;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 0.3);
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+        // Low-pass filter for engine rumble
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(800, ctx.currentTime);
+        lpf.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.8);
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+        src.connect(lpf); lpf.connect(gainNode); gainNode.connect(ctx.destination);
+        src.start();
+        // High whine
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.4);
+        osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.8);
+        oscGain.gain.setValueAtTime(0.08, ctx.currentTime);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+        osc.connect(oscGain); oscGain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.8);
+      } catch (e) { }
+    }
+
+    function playPlaneArrival() {
+      AudioEngine.init();
+      if (!AudioEngine.ctx) return;
+      try {
+        const ctx = AudioEngine.ctx;
+        // Landing/arrival chord
+        [440, 554, 659].forEach((f, i) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'sine'; o.frequency.value = f;
+          g.gain.setValueAtTime(0, ctx.currentTime + i * 0.06);
+          g.gain.linearRampToValueAtTime(0.12, ctx.currentTime + i * 0.06 + 0.05);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.06 + 0.7);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(ctx.currentTime + i * 0.06);
+          o.stop(ctx.currentTime + i * 0.06 + 0.7);
+        });
+      } catch (e) { }
+    }
+
+    /* ============================================================
+       MAP SEQUENCE - fixed world view, SVG plane line animation
+       ============================================================ */
+    function showMapAndSelectDestination(callback) {
+      const mapOverlay = document.getElementById('overlay-map');
+      mapOverlay.classList.remove('hidden');
+      document.getElementById('overlay-start').classList.add('hidden');
+
+      const title = document.getElementById('map-title');
+      const subtitle = document.getElementById('map-subtitle');
+
+      // Pick random destination
+      const targetItem = cityDB[Math.floor(Math.random() * cityDB.length)];
+
+      // Init Leaflet map
+      if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+
+      setTimeout(() => {
+        mapInstance = L.map('map-container', {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false
+        }).setView([25, 10], 2);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19
+        }).addTo(mapInstance);
+
+        // Draw ALL city dots (all dots look identical red at first)
+        cityDB.forEach(city => {
+          const dot = L.divIcon({
+            html: `<div style="width:7px;height:7px;background:#e8433a;border:2px solid white;border-radius:50%;box-shadow:0 0 5px rgba(232,67,58,0.7);transition:all 0.3s" class="city-dot-${city.file.replace(/[^a-z]/gi, '')}" ></div>`,
+            className: '',
+            iconSize: [7, 7],
+            iconAnchor: [3.5, 3.5]
+          });
+          L.marker([city.lat, city.lng], { icon: dot }).addTo(mapInstance);
+        });
+
+        title.textContent = '✈ 비행기가 출발합니다!';
+        subtitle.textContent = '두두두두... 어디로 갈까요?';
+
+        // Create SVG overlay on map for flight path lines
+        const mapEl = document.getElementById('map-container');
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svgOverlay = document.createElementNS(svgNS, 'svg');
+        svgOverlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:500;overflow:visible;';
+        mapEl.style.position = 'relative';
+        mapEl.appendChild(svgOverlay);
+
+        // Plane emoji on SVG
+        const planeText = document.createElementNS(svgNS, 'text');
+        planeText.setAttribute('font-size', '28');
+        planeText.setAttribute('text-anchor', 'middle');
+        planeText.setAttribute('dominant-baseline', 'middle');
+        planeText.textContent = '✈';
+        planeText.style.filter = 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))';
+        svgOverlay.appendChild(planeText);
+
+        // Find Korea as starting point
+        const koreaCity = cityDB.find(c => c.country === '대한민국') || cityDB[0];
+
+        // Helper: calculate approximation of distance (Euclidean in lat/lng for simplicity of filtering)
+        function getDistance(c1, c2) {
+          return Math.sqrt(Math.pow(c1.lat - c2.lat, 2) + Math.pow(c1.lng - c2.lng, 2));
+        }
+
+        // Waypoints: Korea -> Far City 1 -> Far City 2 -> Target (Total 3 segment flight)
+        // Filter candidate cities that are far (distance > 50 degrees)
+        let candidates1 = cityDB.filter(c => c.file !== koreaCity.file && c.file !== targetItem.file && getDistance(koreaCity, c) > 50);
+        if (candidates1.length === 0) candidates1 = cityDB.filter(c => c.file !== koreaCity.file && c.file !== targetItem.file);
+        const wp1 = candidates1[Math.floor(Math.random() * candidates1.length)];
+
+        let candidates2 = cityDB.filter(c => c.file !== koreaCity.file && c.file !== wp1.file && c.file !== targetItem.file && getDistance(wp1, c) > 50);
+        if (candidates2.length === 0) candidates2 = cityDB.filter(c => c.file !== koreaCity.file && c.file !== wp1.file && c.file !== targetItem.file);
+        const wp2 = candidates2[Math.floor(Math.random() * candidates2.length)];
+
+        const waypoints = [koreaCity, wp1, wp2, targetItem];
+
+        // Convert lat/lng to pixel on map
+        function latLngToPixel(lat, lng) {
+          const pt = mapInstance.latLngToContainerPoint(L.latLng(lat, lng));
+          return { x: pt.x, y: pt.y };
+        }
+
+        let currentWpIndex = 0;
+        let animFrame = null;
+        let segStart = null;
+        const SEGMENT_DURATION = 700; // ms per city
+        const FINAL_PAUSE = 2000;
+
+        function drawTrail(x1, y1, x2, y2, progress, color) {
+          const mx = x1 + (x2 - x1) * progress;
+          const my = y1 + (y2 - y1) * progress;
+          // Curved arc via quadratic bezier control point
+          const cx = (x1 + x2) / 2;
+          const cy = Math.min(y1, y2) - Math.abs(x2 - x1) * 0.15 - 20;
+          const line = document.createElementNS(svgNS, 'path');
+          const t = progress;
+          // Quadratic bezier point
+          const bx = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2;
+          const by = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2;
+          line.setAttribute('d', `M ${x1} ${y1} Q ${cx} ${cy} ${bx} ${by}`);
+          line.setAttribute('stroke', color || 'rgba(245,200,66,0.7)');
+          line.setAttribute('stroke-width', '2');
+          line.setAttribute('fill', 'none');
+          line.setAttribute('stroke-dasharray', '5 3');
+          svgOverlay.insertBefore(line, planeText);
+          return { bx, by, angle: Math.atan2(by - y1, bx - x1) * 180 / Math.PI };
+        }
+
+        function animateSegment(wpIdx, timestamp) {
+          if (!segStart) segStart = timestamp;
+          const elapsed = timestamp - segStart;
+          const progress = Math.min(elapsed / SEGMENT_DURATION, 1);
+
+          const fromCity = wpIdx === 0 ? waypoints[0] : waypoints[wpIdx - 1];
+          const toCity = waypoints[wpIdx];
+
+          const from = latLngToPixel(fromCity.lat, fromCity.lng);
+          const to = latLngToPixel(toCity.lat, toCity.lng);
+
+          // Clear old trails each frame and redraw
+          while (svgOverlay.children.length > 1) svgOverlay.removeChild(svgOverlay.firstChild);
+
+          // Draw completed segments
+          for (let i = 1; i < wpIdx; i++) {
+            const f = latLngToPixel(waypoints[i - 1].lat, waypoints[i - 1].lng);
+            const t2 = latLngToPixel(waypoints[i].lat, waypoints[i].lng);
+            drawTrail(f.x, f.y, t2.x, t2.y, 1, 'rgba(245,200,66,0.35)');
+          }
+
+          // Draw current segment
+          const result = drawTrail(from.x, from.y, to.x, to.y, progress, 'rgba(245,200,66,0.85)');
+
+          // Move plane
+          planeText.setAttribute('x', result.bx);
+          planeText.setAttribute('y', result.by);
+          planeText.setAttribute('transform', `rotate(${result.angle + 45}, ${result.bx}, ${result.by})`);
+
+          if (progress < 1) {
+            animFrame = requestAnimationFrame(ts => animateSegment(wpIdx, ts));
+          } else {
+            // Arrived at waypoint
+            const isLast = wpIdx === waypoints.length - 1;
+            if (!isLast) {
+              playPlaneSound();
+              subtitle.textContent = `✈ ${toCity.country} · ${toCity.city} 통과...`;
+              segStart = null;
+              setTimeout(() => {
+                animFrame = requestAnimationFrame(ts => animateSegment(wpIdx + 1, ts));
+              }, 150);
+            } else {
+              // Destination!
+              playPlaneArrival();
+              title.textContent = `${targetItem.flag} ${targetItem.country} · ${targetItem.city}`;
+              subtitle.textContent = '🎯 목적지 도착! 여행을 시작합니다!';
+              // Pulse destination dot
+              const destPulse = L.divIcon({
+                html: `<div style="width:20px;height:20px;background:rgba(245,200,66,0.9);border:3px solid white;border-radius:50%;box-shadow:0 0 20px rgba(245,200,66,1);animation:pingAnim 0.7s ease-in-out infinite"></div>`,
+                className: '', iconSize: [20, 20], iconAnchor: [10, 10]
+              });
+              L.marker([targetItem.lat, targetItem.lng], { icon: destPulse }).addTo(mapInstance);
+              setTimeout(() => {
+                mapOverlay.classList.add('hidden');
+                callback(targetItem);
+              }, FINAL_PAUSE);
+            }
+          }
+        }
+
+        // Start after map is ready and dots rendered
+        setTimeout(() => {
+          playPlaneSound();
+          subtitle.textContent = `✈ 출발! ${waypoints[0].country} · ${waypoints[0].city}...`;
+          const startPt = latLngToPixel(waypoints[0].lat, waypoints[0].lng);
+          planeText.setAttribute('x', startPt.x);
+          planeText.setAttribute('y', startPt.y);
+          segStart = null;
+          animFrame = requestAnimationFrame(ts => animateSegment(1, ts));
+        }, 900);
+
+      }, 100);
+
+      return targetItem;
+    }
+
+    /* ============================================================
+       IMAGE LOADING
+       ============================================================ */
+    function setGameImageAndStart(item) {
+      gameState.imgReady = false;
+      // Build full item object
+      const fullItem = {
+        ...item,
+        url: item.url || `img/${item.file}`,
+        title: item.city || item.title,
+        displayName: item.displayName || `${item.flag || ''} ${item.country} · ${item.city}`
+      };
+      gameState.imgData = fullItem;
+
+      const img = new Image();
+      const timeout = setTimeout(() => {
+        if (!gameState.imgReady) {
+          img.src = '';
+          const fallback = cityDB[Math.floor(Math.random() * cityDB.length)];
+          setGameImageAndStart(fallback);
+        }
+      }, 4000);
+
+      img.onload = () => {
+        clearTimeout(timeout);
+        gameState.imgRatio = img.naturalWidth / img.naturalHeight;
+        document.querySelectorAll('.ref-image').forEach(el => el.src = fullItem.url);
+        document.getElementById('end-artwork').src = fullItem.url;
+        document.getElementById('end-title').textContent = fullItem.title;
+        document.getElementById('end-category').textContent = fullItem.displayName || fullItem.country || '';
+        gameState.imgReady = true;
+      };
+
+      img.onerror = () => {
+        clearTimeout(timeout);
+        const fallback = cityDB[Math.floor(Math.random() * cityDB.length)];
+        setGameImageAndStart(fallback);
+      };
+
+      img.src = fullItem.url;
+    }
+
+    /* ============================================================
+       START SEQUENCE
+       ============================================================ */
+    function startSequence() {
+      AudioEngine.init();
+      gameState.gridSize = selectedGrid;
+      gameState.timeLimit = selectedTime;
+      gameState.timeRemaining = selectedTime;
+
+      if (currentMode === 'random') {
+        showMapAndSelectDestination(item => {
+          const fullItem = {
+            ...item,
+            url: `img/${item.file}`,
+            title: item.city,
+            displayName: `${item.flag} ${item.country} · ${item.city}`
+          };
+          setGameImageAndStart(fullItem);
+          beginCountdown(fullItem);
+        });
+      } else {
+        if (!selectedGalleryItem) {
+          alert('여행지를 선택해주세요!');
+          return;
+        }
+        document.getElementById('overlay-start').classList.add('hidden');
+        setGameImageAndStart(selectedGalleryItem);
+        beginCountdown(selectedGalleryItem);
+      }
+    }
+
+    function beginCountdown(item) {
+      const countOverlay = document.getElementById('overlay-countdown');
+      countOverlay.classList.remove('hidden');
+
+      const countNum = document.getElementById('countdown-number');
+      const spinner = document.getElementById('loading-indicator');
+      const countText = document.getElementById('countdown-text');
+      const rememberText = document.getElementById('countdown-remember');
+      const countImg = document.getElementById('countdown-image');
+      const destLabel = document.getElementById('countdown-destination');
+
+      countNum.classList.add('hidden');
+      spinner.classList.remove('hidden');
+      countText.classList.remove('hidden');
+      countImg.style.display = 'none';
+      rememberText.style.display = 'none';
+      destLabel.textContent = '';
+
+      let count = 5;
+      const checkReady = setInterval(() => {
+        if (gameState.imgReady) {
+          clearInterval(checkReady);
+          spinner.classList.add('hidden');
+          countText.classList.add('hidden');
+
+          destLabel.textContent = item.displayName || `${item.flag || ''} ${item.country} · ${item.city}`;
+          countImg.src = gameState.imgData.url;
+          countImg.style.display = 'block';
+          rememberText.style.display = 'block';
+
+          countNum.textContent = count;
+          countNum.classList.remove('hidden');
+
+          const intv = setInterval(() => {
+            count--;
+            if (count > 0) {
+              countNum.textContent = count;
+              AudioEngine.playTone(1000, 'sine', 0.1, 0.2);
+            } else {
+              clearInterval(intv);
+              countOverlay.classList.add('hidden');
+              startGame();
+            }
+          }, 1000);
+        }
+      }, 200);
+    }
+
+    /* ============================================================
+       COUNTRY METADATA FOR DYNAMIC ENGLISH QUIZZES
+       ============================================================ */
+    const countryDetailsEn = {
+      "그리스": { capital: "Athens", currency: "Euro", continent: "Europe", colors: "Blue and White", language: "Greek" },
+      "대만": { capital: "Taipei", currency: "New Taiwan Dollar", continent: "Asia", colors: "Red, Blue and White", language: "Mandarin Chinese" },
+      "대한민국": { capital: "Seoul", currency: "Korean Won", continent: "Asia", colors: "White, Red, Blue and Black", language: "Korean" },
+      "모로코": { capital: "Rabat", currency: "Moroccan Dirham", continent: "Africa", colors: "Red and Green", language: "Arabic" },
+      "미국": { capital: "Washington D.C.", currency: "US Dollar", continent: "North America", colors: "Red, White and Blue", language: "English" },
+      "볼리비아": { capital: "Sucre", currency: "Boliviano", continent: "South America", colors: "Red, Yellow and Green", language: "Spanish" },
+      "스위스": { capital: "Bern", currency: "Swiss Franc", continent: "Europe", colors: "Red and White", language: "German, French and Italian" },
+      "스페인": { capital: "Madrid", currency: "Euro", continent: "Europe", colors: "Red and Yellow", language: "Spanish" },
+      "슬로베니아": { capital: "Ljubljana", currency: "Euro", continent: "Europe", colors: "White, Blue and Red", language: "Slovenian" },
+      "아이슬란드": { capital: "Reykjavik", currency: "Icelandic Krona", continent: "Europe", colors: "Blue, White and Red", language: "Icelandic" },
+      "오스트리아": { capital: "Vienna", currency: "Euro", continent: "Europe", colors: "Red and White", language: "German" },
+      "이탈리아": { capital: "Rome", currency: "Euro", continent: "Europe", colors: "Green, White and Red", language: "Italian" },
+      "일본": { capital: "Tokyo", currency: "Japanese Yen", continent: "Asia", colors: "White and Red", language: "Japanese" },
+      "체코": { capital: "Prague", currency: "Czech Koruna", continent: "Europe", colors: "White, Red and Blue", language: "Czech" },
+      "캐나다": { capital: "Ottawa", currency: "Canadian Dollar", continent: "North America", colors: "Red and White", language: "English and French" },
+      "쿠바": { capital: "Havana", currency: "Cuban Peso", continent: "North America", colors: "Blue, White and Red", language: "Spanish" },
+      "크로아티아": { capital: "Zagreb", currency: "Euro", continent: "Europe", colors: "Red, White and Blue", language: "Croatian" },
+      "튀르키예": { capital: "Ankara", currency: "Turkish Lira", continent: "Europe and Asia", colors: "Red and White", language: "Turkish" },
+      "페로 제도": { capital: "Torshavn", currency: "Danish Krone", continent: "Europe", colors: "White, Blue and Red", language: "Faroese and Danish" },
+      "페루": { capital: "Lima", currency: "Peruvian Sol", continent: "South America", colors: "Red and White", language: "Spanish and Quechua" },
+      "포르투갈": { capital: "Lisbon", currency: "Euro", continent: "Europe", colors: "Green and Red", language: "Portuguese" },
+      "프랑스": { capital: "Paris", currency: "Euro", continent: "Europe", colors: "Blue, White and Red", language: "French" },
+      "헝가리": { capital: "Budapest", currency: "Hungarian Forint", continent: "Europe", colors: "Red, White and Green", language: "Hungarian" },
+      "홍콩": { capital: "Hong Kong", currency: "Hong Kong Dollar", continent: "Asia", colors: "Red and White", language: "Cantonese and English" }
+    };
+
+    /* ============================================================
+       QUIZ SELECTION (Supports En dynamic fallback for foreign languages)
+       ============================================================ */
+    function selectQuizForDestination(item) {
+      const country = item.country;
+      
+      // If language is Korean, pull from standard Korean database
+      if (window.lsCurrentLang === 'ko') {
+        let quizPool = quizDB[country];
+        if (!quizPool) {
+          quizPool = [{ q: `${item.displayName || item.city}는 어느 나라에 있나요?`, a: country, opts: [country, "일본", "프랑스", "미국"] }];
+        }
+        return quizPool[Math.floor(Math.random() * quizPool.length)];
+      }
+      
+      // For all OTHER languages (English mode fallback)
+      const cInfo = countryDetailsEn[country] || { capital: "the Capital", currency: "local currency", continent: "the World", colors: "various colors", language: "national language" };
+      const countryEn = item.countryEn || country;
+      const cityEn = item.cityEn || item.city;
+      
+      // Build 5 diverse high-quality templates
+      const templates = [
+        {
+          q: `Where is ${cityEn} located?`,
+          a: countryEn,
+          opts: [countryEn, "Japan", "France", "United States"]
+        },
+        {
+          q: `What is the capital city of ${countryEn}?`,
+          a: cInfo.capital,
+          opts: [cInfo.capital, "London", "Paris", "Berlin"]
+        },
+        {
+          q: `Which currency is used in ${countryEn}?`,
+          a: cInfo.currency,
+          opts: [cInfo.currency, "Euro", "US Dollar", "Japanese Yen"]
+        },
+        {
+          q: `In which continent is ${countryEn} situated?`,
+          a: cInfo.continent,
+          opts: [cInfo.continent, "Africa", "Asia", "South America"]
+        },
+        {
+          q: `What colors are present on the flag of ${countryEn}?`,
+          a: cInfo.colors,
+          opts: [cInfo.colors, "Red and Gold", "Black and Yellow", "Blue and Orange"]
+        },
+        {
+          q: `What is the official/most spoken language of ${countryEn}?`,
+          a: cInfo.language,
+          opts: [cInfo.language, "English", "Spanish", "Mandarin"]
+        }
+      ];
+
+      // Shuffle options for uniqueness
+      const selected = templates[Math.floor(Math.random() * templates.length)];
+      // Filter out duplicate option texts if any fallbacks overlap
+      const uniqueOpts = Array.from(new Set(selected.opts));
+      while(uniqueOpts.length < 4) {
+        uniqueOpts.push("Canada", "Australia", "Brazil", "Germany")[uniqueOpts.length];
+      }
+      selected.opts = uniqueOpts;
+      return selected;
+    }
+
+    /* ============================================================
+       GAME ENGINE
+       ============================================================ */
+    function startGame() {
+      AudioEngine.playStart();
+
+      initBoard('p1'); initBoard('p2'); resizeBoards();
+      gameState.isPlaying = true; gameState.timeElapsed = 0;
+      document.getElementById('score-p1').textContent = '0%';
+      document.getElementById('score-p2').textContent = '0%';
+
+      if (gameState.timerIntv) clearInterval(gameState.timerIntv);
+      const timerFill = document.getElementById('timer-fill');
+      const txtTimer = document.getElementById('txt-timer');
+
+      if (gameState.timeLimit > 0) {
+        timerFill.style.width = '100%';
+        timerFill.style.transition = 'width 1s linear';
+        gameState.timerIntv = setInterval(() => {
+          gameState.timeRemaining--;
+          const m = String(Math.floor(gameState.timeRemaining / 60)).padStart(2, '0');
+          const s = String(gameState.timeRemaining % 60).padStart(2, '0');
+          txtTimer.textContent = `${m}:${s}`;
+          const pct = (gameState.timeRemaining / gameState.timeLimit) * 100;
+          timerFill.style.width = `${pct}%`;
+          if (gameState.timeRemaining <= 10) {
+            timerFill.style.background = '#e8433a';
+            if (gameState.timeRemaining > 0) AudioEngine.playTone(1200, 'sine', 0.1, 0.2);
+          } else if (pct <= 30) {
+            timerFill.style.background = '#f5c842';
+          } else {
+            timerFill.style.background = 'linear-gradient(90deg, #e8433a, #f5c842, #2ecc71)';
+          }
+          if (gameState.timeRemaining <= 0) { clearInterval(gameState.timerIntv); handleTimeOut(); }
+        }, 1000);
+      } else {
+        timerFill.style.width = '100%'; timerFill.style.background = '#2ecc71';
+        gameState.timerIntv = setInterval(() => {
+          gameState.timeElapsed++;
+          const m = String(Math.floor(gameState.timeElapsed / 60)).padStart(2, '0');
+          const s = String(gameState.timeElapsed % 60).padStart(2, '0');
+          txtTimer.textContent = `${m}:${s}`;
+        }, 1000);
+      }
+    }
+
+    function autoCompleteBoard(pState) {
+      for (let i = 0; i < pState.pieces.length; i++) pState.pieces[i] = i;
+      updateVisuals(pState);
+      const isP1 = pState.boardId === 'board-p1';
+      document.getElementById(isP1 ? 'score-p1' : 'score-p2').textContent = '100%';
+    }
+
+    function handleTimeOut() {
+      gameState.isPlaying = false;
+      document.querySelectorAll('.quiz-panel').forEach(p => p.remove());
+      let p1Score = getProgress(gameState.p1), p2Score = getProgress(gameState.p2);
+      if (gameState.p1.quizActive) p1Score = 100;
+      if (gameState.p2.quizActive) p2Score = 100;
+      if (p1Score > p2Score) { autoCompleteBoard(gameState.p1); endGameSequence('p1'); }
+      else if (p2Score > p1Score) { autoCompleteBoard(gameState.p2); endGameSequence('p2'); }
+      else { showOriginalEndOverlay('draw'); }
+    }
+
+    function resizeBoards() {
+      ['p1', 'p2'].forEach(player => {
+        const pState = gameState[player];
+        const container = document.querySelector(player === 'p1' ? '.left-table' : '.right-table');
+        if (!container) return;
+        const maxW = container.clientWidth - 40, maxH = container.clientHeight - 40;
+        const containerRatio = maxW / maxH;
+        const imgRatio = gameState.imgRatio || 1;
+        let boardW, boardH;
+        if (imgRatio > containerRatio) { boardW = maxW; boardH = maxW / imgRatio; }
+        else { boardH = maxH; boardW = maxH * imgRatio; }
+        const boardEl = document.getElementById(pState.boardId);
+        boardEl.style.width = boardW + 'px';
+        boardEl.style.height = boardH + 'px';
+        updateVisuals(pState, boardW, boardH);
+      });
+    }
+
+    function initBoard(playerKey) {
+      const pState = gameState[playerKey];
+      const boardEl = document.getElementById(pState.boardId);
+      boardEl.innerHTML = '';
+      pState.pieces = []; pState.domElements = []; pState.isWinner = false; pState.quizActive = false;
+
+      const total = gameState.gridSize * gameState.gridSize;
+      for (let i = 0; i < total; i++) pState.pieces.push(i);
+      do { pState.pieces.sort(() => Math.random() - 0.5); } while (pState.pieces.every((v, i) => v === i));
+
+      for (let pieceId = 0; pieceId < total; pieceId++) {
+        const pieceEl = document.createElement('div');
+        pieceEl.className = 'puzzle-piece';
+        pieceEl.dataset.player = playerKey;
+        pieceEl.dataset.pieceId = pieceId;
+        const origRow = Math.floor(pieceId / gameState.gridSize);
+        const origCol = pieceId % gameState.gridSize;
+        const bgPosX = gameState.gridSize > 1 ? (origCol / (gameState.gridSize - 1)) * 100 : 0;
+        const bgPosY = gameState.gridSize > 1 ? (origRow / (gameState.gridSize - 1)) * 100 : 0;
+        pieceEl.style.backgroundImage = `url(${gameState.imgData.url})`;
+        pieceEl.style.backgroundSize = `${gameState.gridSize * 100}% ${gameState.gridSize * 100}%`;
+        pieceEl.style.backgroundPosition = `${bgPosX}% ${bgPosY}%`;
+        attachDragEvents(pieceEl, pState);
+        pState.domElements[pieceId] = pieceEl;
+        boardEl.appendChild(pieceEl);
+      }
+    }
+
+    function updateVisuals(pState, boardW, boardH) {
+      if (!pState.domElements || pState.domElements.length === 0) return;
+      const boardEl = document.getElementById(pState.boardId);
+      const cW = boardW || boardEl.clientWidth;
+      const cH = boardH || boardEl.clientHeight;
+      const pieceW = cW / gameState.gridSize;
+      const pieceH = cH / gameState.gridSize;
+      for (let s = 0; s < pState.pieces.length; s++) {
+        const pieceEl = pState.domElements[pState.pieces[s]];
+        pieceEl.style.width = pieceW + 'px';
+        pieceEl.style.height = pieceH + 'px';
+        pieceEl.style.left = ((s % gameState.gridSize) * pieceW) + 'px';
+        pieceEl.style.top = (Math.floor(s / gameState.gridSize) * pieceH) + 'px';
+        pieceEl.dataset.slotIndex = s;
+      }
+    }
+
+    let activeDrags = {};
+    function attachDragEvents(pieceEl, pState) {
+      pieceEl.addEventListener('pointerdown', e => {
+        if (!gameState.isPlaying || pState.quizActive) return;
+        e.preventDefault();
+        pieceEl.setPointerCapture(e.pointerId);
+        pieceEl.classList.add('dragging');
+        activeDrags[e.pointerId] = { el: pieceEl, pState, slotIndex: parseInt(pieceEl.dataset.slotIndex), startX: e.clientX, startY: e.clientY };
+      });
+      pieceEl.addEventListener('pointermove', e => {
+        const drag = activeDrags[e.pointerId]; if (!drag) return;
+        drag.el.style.transform = `translate(${e.clientX - drag.startX}px, ${e.clientY - drag.startY}px) scale(1.05)`;
+      });
+      const drop = e => {
+        const drag = activeDrags[e.pointerId]; if (!drag) return;
+        drag.el.releasePointerCapture(e.pointerId);
+        drag.el.style.transform = ''; drag.el.classList.remove('dragging');
+        const boardEl = document.getElementById(pState.boardId);
+        const rect = boardEl.getBoundingClientRect();
+        let tCol = Math.max(0, Math.min(gameState.gridSize - 1, Math.floor((e.clientX - rect.left) / (boardEl.clientWidth / gameState.gridSize))));
+        let tRow = Math.max(0, Math.min(gameState.gridSize - 1, Math.floor((e.clientY - rect.top) / (boardEl.clientHeight / gameState.gridSize))));
+        const tIdx = tRow * gameState.gridSize + tCol;
+        if (tIdx !== drag.slotIndex) {
+          const temp = pState.pieces[tIdx]; pState.pieces[tIdx] = pState.pieces[drag.slotIndex]; pState.pieces[drag.slotIndex] = temp;
+          AudioEngine.playClack();
+        }
+        updateVisuals(pState); checkProgress(pState); delete activeDrags[e.pointerId];
+      };
+      pieceEl.addEventListener('pointerup', drop);
+      pieceEl.addEventListener('pointercancel', drop);
+    }
+
+    function getProgress(pState) {
+      let correct = 0;
+      for (let i = 0; i < pState.pieces.length; i++) if (pState.pieces[i] === i) correct++;
+      return Math.floor((correct / pState.pieces.length) * 100);
+    }
+
+    function checkProgress(pState) {
+      if (pState.isWinner || pState.quizActive) return;
+      const pct = getProgress(pState);
+      const isP1 = pState.boardId === 'board-p1';
+      document.getElementById(isP1 ? 'score-p1' : 'score-p2').textContent = `${pct}%`;
+      if (pct === 100) {
+        pState.quizActive = true;
+        showTravelQuiz(pState);
+      }
+    }
+
+    /* ============================================================
+       TRAVEL QUIZ
+       ============================================================ */
+    function showTravelQuiz(pState) {
+      const boardEl = document.getElementById(pState.boardId);
+      const quiz = selectQuizForDestination(gameState.imgData);
+      pState.currentQuiz = quiz;
+
+      const quizPanel = document.createElement('div');
+      quizPanel.className = 'quiz-panel';
+
+      const opts = [...quiz.opts].sort(() => Math.random() - 0.5);
+      
+      const isKo = window.lsCurrentLang === 'ko';
+      const quizTitle = isKo ? '✈ 여행지 퀴즈!' : '✈ Destination Quiz!';
+      const displayDestinationName = isKo 
+        ? (gameState.imgData.displayName || gameState.imgData.title) 
+        : `${gameState.imgData.flag} ${gameState.imgData.countryEn} · ${gameState.imgData.cityEn}`;
+
+      quizPanel.innerHTML = `
+    <div class="quiz-destination-label">${displayDestinationName}</div>
+    <div class="quiz-title">${quizTitle}</div>
+    <div class="quiz-question-text">${quiz.q}</div>
+    <div class="quiz-btn-group">
+      ${opts.map(opt => `<button class="quiz-btn" onpointerdown="answerQuiz('${pState.boardId}', '${opt.replace(/'/g, "\\'")}')">${opt}</button>`).join('')}
+    </div>
+  `;
+      boardEl.appendChild(quizPanel);
+    }
+
+    function answerQuiz(boardId, answer) {
+      const isP1 = boardId === 'board-p1';
+      const playerKey = isP1 ? 'p1' : 'p2';
+      const pState = gameState[playerKey];
+      const quiz = pState.currentQuiz;
+
+      if (quiz && answer === quiz.a) {
+        AudioEngine.playStart();
+        const panel = document.querySelector(`#${boardId} .quiz-panel`);
+        if (panel) panel.remove();
+        pState.isWinner = true;
+        endGame(playerKey);
+      } else {
+        AudioEngine.playTone(180, 'sawtooth', 0.2, 0.5);
+
+        const boardEl = document.getElementById(boardId);
+        const feedback = document.createElement('div');
+        feedback.className = 'wrong-feedback';
+        
+        const isKo = window.lsCurrentLang === 'ko';
+        feedback.textContent = isKo ? '❌ 틀렸습니다! 다시 생각해보세요' : '❌ Wrong! Please try again';
+        
+        boardEl.appendChild(feedback);
+        setTimeout(() => { if (feedback.parentNode) feedback.remove(); }, 2200);
+
+        const panel = document.querySelector(`#${boardId} .quiz-panel`);
+        if (panel) panel.remove();
+        pState.quizActive = false;
+
+        if (pState.pieces.length >= 2) {
+          const temp = pState.pieces[0];
+          pState.pieces[0] = pState.pieces[1];
+          pState.pieces[1] = temp;
+        }
+        updateVisuals(pState);
+        checkProgress(pState);
+      }
+    }
+
+    /* ============================================================
+       END GAME
+       ============================================================ */
+    function endGame(winnerCode) {
+      if (!gameState.isPlaying) return;
+      gameState.isPlaying = false;
+      if (winnerCode === 'draw') showOriginalEndOverlay('draw');
+      else endGameSequence(winnerCode);
+    }
+
+    function endGameSequence(winnerCode) {
+      if (gameState.timerIntv) clearInterval(gameState.timerIntv);
+      document.querySelectorAll('.quiz-panel').forEach(p => p.remove());
+      AudioEngine.playFanfare();
+
+      const winnerBoardId = winnerCode === 'p1' ? 'board-p1' : 'board-p2';
+      document.querySelectorAll(`#${winnerBoardId} .puzzle-piece`).forEach(p => p.style.border = 'none');
+
+      triggerFireworks(winnerCode);
+
+      setTimeout(() => showInfoOnLoserSide(winnerCode), 1000);
+    }
+
+    function triggerFireworks(winnerCode) {
+      const boardEl = document.getElementById(winnerCode === 'p1' ? 'board-p1' : 'board-p2');
+      const rect = boardEl.getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+      const end = Date.now() + 1500;
+      (function frame() {
+        confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: x - 0.05, y }, colors: ['#e8433a', '#f5c842', '#fff', '#1a3a8f'] });
+        confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: x + 0.05, y }, colors: ['#2ecc71', '#f5c842', '#fff', '#e8433a'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      }());
+    }
+
+    function showInfoOnLoserSide(winnerCode) {
+      const loserBoardId = winnerCode === 'p1' ? 'board-p2' : 'board-p1';
+      const loserBoard = document.getElementById(loserBoardId);
+
+      const winnerState = gameState[winnerCode];
+      const winnerQuiz = winnerState.currentQuiz;
+
+      const isKo = window.lsCurrentLang === 'ko';
+
+      let winnerLabel = '';
+      if (isKo) {
+        winnerLabel = winnerCode === 'p1' ? '🔴 빨강팀 승리!' : '🔵 파랑팀 승리!';
+      } else {
+        winnerLabel = winnerCode === 'p1' ? '🔴 Red Team Wins!' : '🔵 Blue Team Wins!';
+      }
+
+      const item = gameState.imgData;
+      const displayTitle = isKo ? (item.displayName || item.title) : `${item.flag} ${item.countryEn} · ${item.cityEn}`;
+      const displayCategory = isKo ? item.country : item.countryEn;
+
+      // 진 쪽 패널 (이긴 팀이 푼 문제 정보 + 미국 라스베거스 퀴즈를 한 곳에 몰아서 표시)
+      const loserInfoPanel = document.createElement('div');
+      loserInfoPanel.className = 'info-panel';
+
+      let winnerQuizHTML = '';
+      if (winnerQuiz) {
+        const quizLabel = isKo ? '[이긴 팀이 푼 퀴즈]' : "[Winner's Quiz]";
+        const qLabel = isKo ? '질문 Q.' : 'Question Q.';
+        const aLabel = isKo ? '정답 A.' : 'Answer A.';
+        
+        winnerQuizHTML = `
+      <div style="margin-top:12px; color:#fff; font-size:clamp(12px, 1.6vw, 15px); line-height:1.4; text-align:left; background:rgba(0,0,0,0.25); padding:10px; border-radius:6px; border-left:4px solid #2ecc71;">
+        <span style="color:#2ecc71; font-weight:900; font-size:12px; text-transform:uppercase;">${quizLabel}</span><br>
+        <strong>${qLabel}</strong> ${winnerQuiz.q}<br>
+        <span style="color:#fbbf24; font-weight:bold; font-size:clamp(13px, 1.8vw, 17px); margin-top:3px; display:inline-block;">${aLabel} ${winnerQuiz.a}</span>
+      </div>
+    `;
+      }
+
+      const subMessage = isKo ? '이긴 팀은 사진을 감상 중입니다 📸' : 'The winning team is enjoying the photo 📸';
+      const btnText = isKo ? '다시 여행하기 ✈' : 'Travel Again ✈';
+
+      loserInfoPanel.innerHTML = `
+    <div class="info-content" style="border-color:var(--stamp-red); max-height: 90%; overflow-y: auto;">
+      <div style="font-size:clamp(20px,3vw,36px);margin-bottom:6px;color:var(--stamp-red);font-weight:900;">🏆 ${winnerLabel}</div>
+      <div style="font-size:14px;color:#aaa;margin-bottom:8px;">${subMessage}</div>
+      
+      <div class="info-title" style="font-size:clamp(16px, 2.2vw, 22px);">${displayTitle}</div>
+      <div class="info-category" style="background:var(--stamp-blue); color:#fff; padding:2px 8px; font-size:11px; margin-bottom:10px;">${displayCategory}</div>
+      
+      <!-- 이긴 팀 정보 -->
+      ${winnerQuizHTML}
+
+      <button class="diff-btn" onclick="document.getElementById('btn-home').click()" style="pointer-events:auto;margin-top:20px;">${btnText}</button>
+    </div>
+  `;
+      loserBoard.appendChild(loserInfoPanel);
+
+      requestAnimationFrame(() => {
+        loserInfoPanel.classList.add('visible');
+      });
+    }
+
+    function showOriginalEndOverlay(code) {
+      if (gameState.timerIntv) clearInterval(gameState.timerIntv);
+      AudioEngine.playFanfare();
+      const endOverlay = document.getElementById('overlay-end');
+      const winTitle = document.getElementById('win-title');
+      if (code === 'draw') {
+        winTitle.textContent = '🤝 무승부!';
+      } else {
+        winTitle.textContent = code === 'p1' ? '🔴 빨강팀 승리!' : '🔵 파랑팀 승리!';
+      }
+      endOverlay.classList.remove('hidden');
+    }
+
+    /* ============================================================
+       HOME BUTTON
+       ============================================================ */
+    document.getElementById('btn-home').addEventListener('click', () => {
+      document.querySelectorAll('.info-panel').forEach(p => p.remove());
+      gameState.isPlaying = false;
+      if (gameState.timerIntv) clearInterval(gameState.timerIntv);
+
+      if (document.fullscreenElement) {
+        document.getElementById('overlay-start').classList.remove('hidden');
+        document.getElementById('overlay-end').classList.add('hidden');
+        document.getElementById('overlay-countdown').classList.add('hidden');
+        document.getElementById('overlay-map').classList.add('hidden');
+        document.getElementById('board-p1').innerHTML = '';
+        document.getElementById('board-p2').innerHTML = '';
+        document.getElementById('score-p1').textContent = '0%';
+        document.getElementById('score-p2').textContent = '0%';
+        document.getElementById('txt-timer').textContent = '진행 시간';
+        document.getElementById('timer-fill').style.width = '0%';
+      } else {
+        location.reload();
+      }
+    });
+
+    /* ============================================================
+       PHOTO VIEWER (GALLERY SLIDESHOW)
+       ============================================================ */
+    let currentViewerIndex = 0;
+    
+    window.openPhotoViewer = function() {
+      AudioEngine.init();
+      AudioEngine.playClack();
+      currentViewerIndex = 0;
+      updatePhotoViewer();
+      document.getElementById('overlay-photo-viewer').classList.remove('hidden');
+      if (window.lsHideSelector) window.lsHideSelector();
+    };
+
+    window.closePhotoViewer = function() {
+      document.getElementById('overlay-photo-viewer').classList.add('hidden');
+      if (window.lsShowSelector) window.lsShowSelector();
+    };
+
+    window.updatePhotoViewer = function() {
+      const item = cityDB[currentViewerIndex];
+      if (!item) return;
+      
+      const isKo = window.lsCurrentLang === 'ko';
+      const displayCountry = isKo ? item.country : (item.countryEn || item.country);
+      const displayCity = isKo ? item.city : (item.cityEn || item.city);
+      
+      document.getElementById('viewer-img').src = `img/${item.file}`;
+      document.getElementById('viewer-flag-country').textContent = `${item.flag} ${displayCountry}`;
+      document.getElementById('viewer-city').textContent = displayCity;
+      document.getElementById('viewer-index').textContent = `(${currentViewerIndex + 1} / ${cityDB.length})`;
+    };
+
+    window.prevPhoto = function() {
+      currentViewerIndex = (currentViewerIndex - 1 + cityDB.length) % cityDB.length;
+      updatePhotoViewer();
+    };
+
+    window.nextPhoto = function() {
+      currentViewerIndex = (currentViewerIndex + 1) % cityDB.length;
+      updatePhotoViewer();
+    };
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    (function init() {
+      setAppHeight();
+      initGallery();
+    })();
+  </script>
+
+  <!-- =====================================================================
+     LANG SELECTOR — 완전 독립 영역 (게임 CSS와 충돌 없음)
+     z-index: 99999 최우선
+===================================================================== -->
+
+  <!-- 언어 선택 트리거 버튼 (우상단 고정) -->
+  <div id="langSelectorContainer" style="
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 99999;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+">
+    <button id="langTriggerBtn" style="
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(30,30,30,0.85);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    padding: 6px 14px 6px 10px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+    transition: background 0.2s;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  ">
+      <i class="fa-solid fa-globe" style="color:#9ca3af;font-family:'Font Awesome 6 Free';font-weight:900;"></i>
+      <img id="langCurrentFlag" src="https://flagcdn.com/w40/kr.png" alt="flag"
+        style="width:20px;height:auto;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,0.4);">
+      <span id="langCurrentName" style="color:#fff;">한국어</span>
+      <i class="fa-solid fa-chevron-down"
+        style="color:#9ca3af;font-size:10px;font-family:'Font Awesome 6 Free';font-weight:900;"></i>
+    </button>
+  </div>
+
+  <!-- 언어 선택 모달 -->
+  <div id="langModal" style="
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  padding-top: 70px;
+  padding-left: 12px;
+  padding-right: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+">
+    <!-- 모달 내부 박스 -->
+    <div id="langModalBox" style="
+    box-sizing: border-box;
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+    width: 100%;
+    max-width: 860px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.96) translateY(-8px);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    opacity: 0;
+  ">
+      <!-- 헤더 -->
+      <div style="
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid #1f2937;
+      background: #111827;
+      flex-shrink: 0;
+    ">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fa-solid fa-language"
+            style="color:#eab308;font-family:'Font Awesome 6 Free';font-weight:900;font-size:18px;"></i>
+          <span style="color:#fff;font-size:17px;font-weight:700;">Language / 언어</span>
+        </div>
+        <button id="langCloseBtn" style="
+        box-sizing: border-box;
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: #1f2937;
+        border: none;
+        cursor: pointer;
+        color: #9ca3af;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s;
+        font-family: 'Font Awesome 6 Free';
+      ">
+          <i class="fa-solid fa-xmark" style="font-family:'Font Awesome 6 Free';font-weight:900;font-size:16px;"></i>
+        </button>
+      </div>
+      <!-- 검색 -->
+      <div style="box-sizing:border-box;padding:14px 20px 6px;background:#111827;flex-shrink:0;">
+        <div style="position:relative;">
+          <i class="fa-solid fa-magnifying-glass" style="
+          position:absolute;left:13px;top:50%;transform:translateY(-50%);
+          color:#6b7280;font-family:'Font Awesome 6 Free';font-weight:900;font-size:13px;
+          pointer-events:none;
+        "></i>
+          <input id="langSearchInput" type="text" placeholder="Search / 검색 ..." style="
+          box-sizing: border-box;
+          width: 100%;
+          background: #1f2937;
+          border: 1px solid #374151;
+          color: #fff;
+          font-size: 13px;
+          border-radius: 10px;
+          padding: 11px 14px 11px 38px;
+          outline: none;
+          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          transition: border-color 0.2s;
+        ">
+        </div>
+      </div>
+      <!-- 언어 목록 -->
+      <div id="langGrid" style="
+      box-sizing: border-box;
+      padding: 14px 20px 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      align-content: start;
+    ">
+      </div>
+      <!-- 검색 결과 없음 -->
+      <div id="langNoResult" style="
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #6b7280;
+      font-size: 14px;
+      gap: 10px;
+    ">
+        <i class="fa-regular fa-face-frown-open"
+          style="font-size:32px;font-family:'Font Awesome 6 Free';font-weight:400;"></i>
+        <p style="margin:0;">No results / 검색 결과 없음</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 -->
+  <div id="langToast" style="
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transform: translateY(120%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  pointer-events: none;
+">
+    <div
+      style="width:32px;height:32px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <i class="fa-solid fa-check"
+        style="color:#4ade80;font-family:'Font Awesome 6 Free';font-weight:900;font-size:14px;"></i>
+    </div>
+    <div>
+      <p id="langToastMsg" style="margin:0;font-size:13px;font-weight:600;color:#fff;">언어가 변경되었습니다.</p>
+      <p id="langToastName" style="margin:2px 0 0;font-size:11px;color:#9ca3af;">Korean</p>
+    </div>
+  </div>
+
+  <style>
+    /* ===== 언어 모달 전용 스크롤바 (게임 CSS와 완전 분리) ===== */
+    #langModal,
+    #langModal * {
+      box-sizing: border-box !important;
+    }
+
+    #langGrid::-webkit-scrollbar {
+      width: 7px;
+    }
+
+    #langGrid::-webkit-scrollbar-track {
+      background: rgba(31, 41, 55, 0.5);
+      border-radius: 4px;
+    }
+
+    #langGrid::-webkit-scrollbar-thumb {
+      background: #4b5563;
+      border-radius: 4px;
+    }
+
+    #langGrid::-webkit-scrollbar-thumb:hover {
+      background: #6b7280;
+    }
+
+    /* Font Awesome 아이콘 깨짐 방지 — 모달 내 i 태그는 FA 폰트 강제 유지 */
+    #langModal i,
+    #langModal i.fa-solid,
+    #langModal i.fa-regular {
+      font-family: "Font Awesome 6 Free" !important;
+    }
+
+    #langSelectorContainer i,
+    #langSelectorContainer i.fa-solid {
+      font-family: "Font Awesome 6 Free" !important;
+    }
+  </style>
+
+  <script>
+    /* =====================================================================
+       LANG SELECTOR — 독립 스크립트 (게임 로직 무수정)
+    ===================================================================== */
+    (function () {
+      'use strict';
+
+      /* ── 16개국 언어 DB ── */
+      const LS_LANGS = [
+        { code: 'ko', country: 'kr', name: '한국어', enName: 'Korean' },
+        { code: 'en', country: 'us', name: 'English', enName: 'English' },
+        { code: 'zh', country: 'cn', name: '中文 (简体)', enName: 'Chinese (Simplified)' },
+        { code: 'ja', country: 'jp', name: '日本語', enName: 'Japanese' },
+        { code: 'es', country: 'es', name: 'Español', enName: 'Spanish' },
+        { code: 'fr', country: 'fr', name: 'Français', enName: 'French' },
+        { code: 'de', country: 'de', name: 'Deutsch', enName: 'German' },
+        { code: 'it', country: 'it', name: 'Italiano', enName: 'Italian' },
+        { code: 'pt-br', country: 'br', name: 'Português', enName: 'Portuguese (Brazil)' },
+        { code: 'ru', country: 'ru', name: 'Русский', enName: 'Russian' },
+        { code: 'hi', country: 'in', name: 'हिन्दी', enName: 'Hindi' },
+        { code: 'bn', country: 'bd', name: 'বাংলা', enName: 'Bengali' },
+        { code: 'id', country: 'id', name: 'Bahasa Indonesia', enName: 'Indonesian' },
+        { code: 'vi', country: 'vn', name: 'Tiếng Việt', enName: 'Vietnamese' },
+        { code: 'th', country: 'th', name: 'ไทย', enName: 'Thai' },
+        { code: 'tr', country: 'tr', name: 'Türkçe', enName: 'Turkish' }
+      ];
+
+      /* ── 16개국 번역 데이터 ── */
+      const LS_I18N = {
+        ko: {
+          title: '✈ 세계여행 퍼즐킹',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 랜덤 여행지', tab_select: '🗺 여행지 선택',
+          red_team: '빨강팀', blue_team: '파랑팀',
+          timer_label: '진행 시간',
+          start_btn: '게임 시작',
+          other_game: '🎮 다른 게임 고르기',
+          remember: '🗺 여행지를 잘 기억하세요!',
+          map_title: '✈ 비행기가 출발합니다!',
+          map_sub: '두두두두... 어디로 갈까요?',
+          quiz_title: '✈ 여행지 퀴즈!',
+          time_1: '1분', time_2: '2분', time_3: '3분', time_5: '5분', time_unlimited: '무제한',
+          diff: '난이도', time: '제한 시간',
+          retry: '다시 여행하기 ✈',
+          toast: '언어가 변경되었습니다.',
+          seo_title: '세계여행 퍼즐킹 - 세계 도시 퍼즐 게임',
+          seo_desc: '세계 도시를 여행하며 즐기는 두뇌 퍼즐 게임 - 세계여행 퍼즐킹',
+          seo_keys: '세계여행, 퍼즐, 게임, 도시, 여행퍼즐',
+          random_title: '어디로 여행할까요?',
+          random_desc: '지도에서 랜덤으로 여행지가 선택됩니다!<br>세계 곳곳의 아름다운 도시를 탐험하세요 ✈',
+          credit_photo: '사진 : 정혜란',
+          credit_insta: '더 많은 사진 보기 📸 @aprilran',
+          credit_book: '📙 사진으로 가꾸는 행복한 교실 (지식프레임)',
+          gallery_btn: '사진 감상'
+        },
+        en: {
+          title: '✈ World Travel Puzzle King',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Random Destination', tab_select: '🗺 Choose Destination',
+          red_team: 'Red Team', blue_team: 'Blue Team',
+          timer_label: 'Time',
+          start_btn: 'Start Game',
+          other_game: '🎮 More Games',
+          remember: '🗺 Remember the destination!',
+          map_title: '✈ The plane is taking off!',
+          map_sub: 'Where will we go today?',
+          quiz_title: '✈ Destination Quiz!',
+          time_1: '1 Min', time_2: '2 Min', time_3: '3 Min', time_5: '5 Min', time_unlimited: 'Unlimited',
+          diff: 'Difficulty', time: 'Time Limit',
+          retry: 'Travel Again ✈',
+          toast: 'Language changed.',
+          seo_title: 'World Travel Puzzle King - City Puzzle Game',
+          seo_desc: 'A brain puzzle game where you travel to world cities - World Travel Puzzle King',
+          seo_keys: 'world travel, puzzle, game, city, travel puzzle',
+          random_title: 'Where shall we travel?',
+          random_desc: 'A destination will be chosen randomly on the map!<br>Explore beautiful cities around the world ✈',
+          credit_photo: 'Photo : Heeran Jeong',
+          credit_insta: 'View More Photos 📸 @aprilran',
+          credit_book: '📙 Happy Classroom with Photos (Jisik Frame)',
+          gallery_btn: 'Gallery'
+        },
+        zh: {
+          title: '✈ 世界旅行拼图王',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 随机目的地', tab_select: '🗺 选择目的地',
+          red_team: '红队', blue_team: '蓝队',
+          timer_label: '时间',
+          start_btn: '出发！',
+          other_game: '🎮 更多游戏',
+          remember: '🗺 请记住目的地！',
+          map_title: '✈ 飞机起飞了！',
+          map_sub: '我们要去哪里？',
+          quiz_title: '✈ 目的地问答！',
+          time_1: '1分钟', time_2: '2分钟', time_3: '3分钟', time_5: '5分钟', time_unlimited: '无限制',
+          diff: '难度', time: '时间限制',
+          retry: '再次旅行 ✈',
+          toast: '语言已更改。',
+          seo_title: '世界旅行拼图王 - 城市拼图游戏',
+          seo_desc: '在世界城市旅行中享受的益智拼图游戏 - 世界旅行拼图王',
+          seo_keys: '世界旅行, 拼图, 游戏, 城市'
+        },
+        ja: {
+          title: '✈ 世界旅行パズルキング',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 ランダム旅先', tab_select: '🗺 旅先を選ぶ',
+          red_team: '赤チーム', blue_team: '青チーム',
+          timer_label: '時間',
+          start_btn: '出発！',
+          other_game: '🎮 ほかのゲーム',
+          remember: '🗺 旅先をよく覚えてください！',
+          map_title: '✈ 飛行機が出発します！',
+          map_sub: 'どこへ行くかな？',
+          quiz_title: '✈ 旅先クイズ！',
+          time_1: '1分', time_2: '2分', time_3: '3分', time_5: '5分', time_unlimited: '無制限',
+          diff: '難易度', time: '制限時間',
+          retry: 'もう一度旅行 ✈',
+          toast: '言語が変更されました。',
+          seo_title: '世界旅行パズルキング - 都市パズルゲーム',
+          seo_desc: '世界の都市を旅しながら楽しむ脳トレパズルゲーム',
+          seo_keys: '世界旅行, パズル, ゲーム, 都市'
+        },
+        es: {
+          title: '✈ Rey del Puzzle Mundial',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Destino al Azar', tab_select: '🗺 Elegir Destino',
+          red_team: 'Equipo Rojo', blue_team: 'Equipo Azul',
+          timer_label: 'Tiempo',
+          start_btn: '¡Vamos!',
+          other_game: '🎮 Más Juegos',
+          remember: '🗺 ¡Recuerda el destino!',
+          map_title: '✈ ¡El avión despega!',
+          map_sub: '¿A dónde vamos hoy?',
+          quiz_title: '✈ ¡Quiz del Destino!',
+          time_1: '1 Min', time_2: '2 Min', time_3: '3 Min', time_5: '5 Min', time_unlimited: 'Sin límite',
+          diff: 'Nivel', time: 'Tiempo',
+          retry: 'Viajar de Nuevo ✈',
+          toast: 'Idioma cambiado.',
+          seo_title: 'Rey del Puzzle Mundial - Juego de Ciudades',
+          seo_desc: 'Un juego de puzzle donde viajas por ciudades del mundo',
+          seo_keys: 'viaje mundial, puzzle, juego, ciudad'
+        },
+        fr: {
+          title: '✈ Roi du Puzzle Mondial',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Destination Aléatoire', tab_select: '🗺 Choisir Destination',
+          red_team: 'Équipe Rouge', blue_team: 'Équipe Bleue',
+          timer_label: 'Temps',
+          start_btn: 'On y va !',
+          other_game: '🎮 Autres Jeux',
+          remember: '🗺 Mémorisez la destination !',
+          map_title: '✈ L\'avion décolle !',
+          map_sub: 'Où allons-nous aujourd\'hui ?',
+          quiz_title: '✈ Quiz de Destination !',
+          time_1: '1 Min', time_2: '2 Min', time_3: '3 Min', time_5: '5 Min', time_unlimited: 'Illimité',
+          diff: 'Niveau', time: 'Temps',
+          retry: 'Voyager Encore ✈',
+          toast: 'Langue modifiée.',
+          seo_title: 'Roi du Puzzle Mondial - Jeu de Villes',
+          seo_desc: 'Un jeu de puzzle où vous voyagez dans les villes du monde',
+          seo_keys: 'voyage mondial, puzzle, jeu, ville'
+        },
+        de: {
+          title: '✈ Welt-Puzzle-König',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Zufälliges Ziel', tab_select: '🗺 Ziel Wählen',
+          red_team: 'Rotes Team', blue_team: 'Blaues Team',
+          timer_label: 'Zeit',
+          start_btn: 'Los geht\'s!',
+          other_game: '🎮 Mehr Spiele',
+          remember: '🗺 Merke das Reiseziel!',
+          map_title: '✈ Das Flugzeug hebt ab!',
+          map_sub: 'Wohin fliegen wir heute?',
+          quiz_title: '✈ Reiseziel-Quiz!',
+          time_1: '1 Min', time_2: '2 Min', time_3: '3 Min', time_5: '5 Min', time_unlimited: 'Unbegrenzt',
+          diff: 'Schwierigkeit', time: 'Zeitlimit',
+          retry: 'Nochmal Reisen ✈',
+          toast: 'Sprache geändert.',
+          seo_title: 'Welt-Puzzle-König - Städte-Puzzle-Spiel',
+          seo_desc: 'Ein Puzzle-Spiel, bei dem du durch Weltstädte reist',
+          seo_keys: 'Weltreise, Puzzle, Spiel, Stadt'
+        },
+        it: {
+          title: '✈ Re del Puzzle Mondiale',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Destinazione Casuale', tab_select: '🗺 Scegli Destinazione',
+          red_team: 'Squadra Rossa', blue_team: 'Squadra Blu',
+          timer_label: 'Tempo',
+          start_btn: 'Partiamo!',
+          other_game: '🎮 Altri Giochi',
+          remember: '🗺 Ricorda la destinazione!',
+          map_title: '✈ L\'aereo decolla!',
+          map_sub: 'Dove andiamo oggi?',
+          quiz_title: '✈ Quiz sulla Destinazione!',
+          time_1: '1 Min', time_2: '2 Min', time_3: '3 Min', time_5: '5 Min', time_unlimited: 'Illimitato',
+          diff: 'Difficoltà', time: 'Tempo',
+          retry: 'Viaggia di Nuovo ✈',
+          toast: 'Lingua cambiata.',
+          seo_title: 'Re del Puzzle Mondiale - Gioco di Città',
+          seo_desc: 'Un gioco di puzzle in cui viaggi nelle città del mondo',
+          seo_keys: 'viaggio mondiale, puzzle, gioco, città'
+        },
+        'pt-br': {
+          title: '✈ Rei do Puzzle Mundial',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Destino Aleatório', tab_select: '🗺 Escolher Destino',
+          red_team: 'Time Vermelho', blue_team: 'Time Azul',
+          timer_label: 'Tempo',
+          start_btn: 'Vamos lá!',
+          other_game: '🎮 Mais Jogos',
+          remember: '🗺 Lembre o destino!',
+          map_title: '✈ O avião está decolando!',
+          map_sub: 'Para onde vamos hoje?',
+          quiz_title: '✈ Quiz do Destino!',
+          time_1: '1 Min', time_2: '2 Min', time_3: '3 Min', time_5: '5 Min', time_unlimited: 'Ilimitado',
+          diff: 'Dificuldade', time: 'Tempo',
+          retry: 'Viajar Novamente ✈',
+          toast: 'Idioma alterado.',
+          seo_title: 'Rei do Puzzle Mundial - Jogo de Cidades',
+          seo_desc: 'Um jogo de puzzle onde você viaja pelas cidades do mundo',
+          seo_keys: 'viagem mundial, puzzle, jogo, cidade'
+        },
+        ru: {
+          title: '✈ Король Мирового Пазла',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Случайный Маршрут', tab_select: '🗺 Выбрать Маршрут',
+          red_team: 'Красная Команда', blue_team: 'Синяя Команда',
+          timer_label: 'Время',
+          start_btn: 'Поехали!',
+          other_game: '🎮 Другие Игры',
+          remember: '🗺 Запомни место назначения!',
+          map_title: '✈ Самолёт взлетает!',
+          map_sub: 'Куда летим сегодня?',
+          quiz_title: '✈ Викторина о Месте!',
+          time_1: '1 Мин', time_2: '2 Мин', time_3: '3 Мин', time_5: '5 Мин', time_unlimited: 'Без Лимита',
+          diff: 'Уровень', time: 'Время',
+          retry: 'Ещё Раз Путешествовать ✈',
+          toast: 'Язык изменён.',
+          seo_title: 'Король Мирового Пазла - Городская Игра',
+          seo_desc: 'Пазл-игра о путешествиях по городам мира',
+          seo_keys: 'мировое путешествие, пазл, игра, город'
+        },
+        hi: {
+          title: '✈ विश्व यात्रा पहेली राजा',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 यादृच्छिक गंतव्य', tab_select: '🗺 गंतव्य चुनें',
+          red_team: 'लाल टीम', blue_team: 'नीली टीम',
+          timer_label: 'समय',
+          start_btn: 'चलो!',
+          other_game: '🎮 और खेल',
+          remember: '🗺 गंतव्य याद रखें!',
+          map_title: '✈ हवाई जहाज उड़ रहा है!',
+          map_sub: 'आज कहाँ जाएंगे?',
+          quiz_title: '✈ गंतव्य प्रश्नोत्तरी!',
+          time_1: '1 मिनट', time_2: '2 मिनट', time_3: '3 मिनट', time_5: '5 मिनट', time_unlimited: 'असीमित',
+          diff: 'कठिनाई', time: 'समय सीमा',
+          retry: 'फिर यात्रा करें ✈',
+          toast: 'भाषा बदल दी गई।',
+          seo_title: 'विश्व यात्रा पहेली राजा - शहर पहेली खेल',
+          seo_desc: 'दुनिया के शहरों की यात्रा करते हुए पहेली खेल',
+          seo_keys: 'विश्व यात्रा, पहेली, खेल, शहर'
+        },
+        bn: {
+          title: '✈ বিশ্ব ভ্রমণ পাজল রাজা',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 এলোমেলো গন্তব্য', tab_select: '🗺 গন্তব্য বেছে নিন',
+          red_team: 'লাল দল', blue_team: 'নীল দল',
+          timer_label: 'সময়',
+          start_btn: 'চলো যাই!',
+          other_game: '🎮 আরও খেলা',
+          remember: '🗺 গন্তব্য মনে রাখুন!',
+          map_title: '✈ বিমান উড়ছে!',
+          map_sub: 'আজ কোথায় যাব?',
+          quiz_title: '✈ গন্তব্য কুইজ!',
+          time_1: '১ মিনিট', time_2: '২ মিনিট', time_3: '৩ মিনিট', time_5: '৫ মিনিট', time_unlimited: 'অসীমিত',
+          diff: 'কঠিনতা', time: 'সময় সীমা',
+          retry: 'আবার ভ্রমণ করুন ✈',
+          toast: 'ভাষা পরিবর্তন হয়েছে।',
+          seo_title: 'বিশ্ব ভ্রমণ পাজল রাজা - শহর পাজল গেম',
+          seo_desc: 'বিশ্বের শহরে ভ্রমণ করে পাজল খেলুন',
+          seo_keys: 'বিশ্ব ভ্রমণ, পাজল, গেম, শহর'
+        },
+        id: {
+          title: '✈ Raja Teka-Teki Dunia',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Tujuan Acak', tab_select: '🗺 Pilih Tujuan',
+          red_team: 'Tim Merah', blue_team: 'Tim Biru',
+          timer_label: 'Waktu',
+          start_btn: 'Ayo Pergi!',
+          other_game: '🎮 Game Lainnya',
+          remember: '🗺 Ingat tujuannya!',
+          map_title: '✈ Pesawat berangkat!',
+          map_sub: 'Kita mau ke mana hari ini?',
+          quiz_title: '✈ Kuis Tujuan!',
+          time_1: '1 Mnt', time_2: '2 Mnt', time_3: '3 Mnt', time_5: '5 Mnt', time_unlimited: 'Tanpa Batas',
+          diff: 'Tingkat', time: 'Batas Waktu',
+          retry: 'Pergi Lagi ✈',
+          toast: 'Bahasa telah diubah.',
+          seo_title: 'Raja Teka-Teki Dunia - Game Kota Puzzle',
+          seo_desc: 'Game puzzle perjalanan ke kota-kota dunia',
+          seo_keys: 'perjalanan dunia, teka-teki, game, kota'
+        },
+        vi: {
+          title: '✈ Vua Đố Vui Du Lịch',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Điểm Đến Ngẫu Nhiên', tab_select: '🗺 Chọn Điểm Đến',
+          red_team: 'Đội Đỏ', blue_team: 'Đội Xanh',
+          timer_label: 'Thời Gian',
+          start_btn: 'Xuất Phát!',
+          other_game: '🎮 Trò Chơi Khác',
+          remember: '🗺 Nhớ điểm đến nhé!',
+          map_title: '✈ Máy bay cất cánh!',
+          map_sub: 'Hôm nay đi đâu nhỉ?',
+          quiz_title: '✈ Câu Đố Điểm Đến!',
+          time_1: '1 Phút', time_2: '2 Phút', time_3: '3 Phút', time_5: '5 Phút', time_unlimited: 'Không Giới Hạn',
+          diff: 'Độ Khó', time: 'Giới Hạn Thời Gian',
+          retry: 'Du Lịch Lại ✈',
+          toast: 'Đã thay đổi ngôn ngữ.',
+          seo_title: 'Vua Đố Vui Du Lịch - Game Xếp Hình Thành Phố',
+          seo_desc: 'Trò chơi xếp hình du lịch khắp các thành phố thế giới',
+          seo_keys: 'du lịch thế giới, xếp hình, game, thành phố'
+        },
+        th: {
+          title: '✈ ราชาปริศนาท่องโลก',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 จุดหมายสุ่ม', tab_select: '🗺 เลือกจุดหมาย',
+          red_team: 'ทีมแดง', blue_team: 'ทีมน้ำเงิน',
+          timer_label: 'เวลา',
+          start_btn: 'ออกเดินทาง!',
+          other_game: '🎮 เกมอื่น',
+          remember: '🗺 จำจุดหมายให้ดีนะ!',
+          map_title: '✈ เครื่องบินกำลังขึ้น!',
+          map_sub: 'วันนี้จะไปที่ไหน?',
+          quiz_title: '✈ ทายจุดหมาย!',
+          time_1: '1 นาที', time_2: '2 นาที', time_3: '3 นาที', time_5: '5 นาที', time_unlimited: 'ไม่จำกัด',
+          diff: 'ระดับ', time: 'จำกัดเวลา',
+          retry: 'เดินทางอีกครั้ง ✈',
+          toast: 'เปลี่ยนภาษาแล้ว',
+          seo_title: 'ราชาปริศนาท่องโลก - เกมเมืองปริศนา',
+          seo_desc: 'เกมปริศนาท่องเที่ยวไปยังเมืองต่างๆ ทั่วโลก',
+          seo_keys: 'ท่องโลก, ปริศนา, เกม, เมือง'
+        },
+        tr: {
+          title: '✈ Dünya Turu Bulmaca Kralı',
+          subtitle: 'WORLD TRAVEL PUZZLE KING',
+          tab_random: '🌐 Rastgele Hedef', tab_select: '🗺 Hedef Seç',
+          red_team: 'Kırmızı Takım', blue_team: 'Mavi Takım',
+          timer_label: 'Süre',
+          start_btn: 'Hadi Gidelim!',
+          other_game: '🎮 Diğer Oyunlar',
+          remember: '🗺 Hedefi iyi hatırla!',
+          map_title: '✈ Uçak kalkıyor!',
+          map_sub: 'Bugün nereye gidiyoruz?',
+          quiz_title: '✈ Hedef Bilgi Yarışması!',
+          time_1: '1 Dk', time_2: '2 Dk', time_3: '3 Dk', time_5: '5 Dk', time_unlimited: 'Sınırsız',
+          diff: 'Zorluk', time: 'Süre Limiti',
+          retry: 'Tekrar Yolculuk ✈',
+          toast: 'Dil değiştirildi.',
+          seo_title: 'Dünya Turu Bulmaca Kralı - Şehir Bulmaca Oyunu',
+          seo_desc: 'Dünya şehirlerinde yolculuk yaparak oynanan bulmaca oyunu',
+          seo_keys: 'dünya turu, bulmaca, oyun, şehir'
+        }
+      };
+
+      /* ── 현재 언어 ── */
+      let lsCurrentLang = 'ko';
+      window.lsCurrentLang = lsCurrentLang;
+      let lsToastTimer = null;
+
+      /* ── DOM refs ── */
+      const lsTriggerBtn = document.getElementById('langTriggerBtn');
+      const lsModal = document.getElementById('langModal');
+      const lsModalBox = document.getElementById('langModalBox');
+      const lsCloseBtn = document.getElementById('langCloseBtn');
+      const lsSearchInput = document.getElementById('langSearchInput');
+      const lsGrid = document.getElementById('langGrid');
+      const lsNoResult = document.getElementById('langNoResult');
+      const lsFlagImg = document.getElementById('langCurrentFlag');
+      const lsNameSpan = document.getElementById('langCurrentName');
+      const lsToast = document.getElementById('langToast');
+      const lsToastMsg = document.getElementById('langToastMsg');
+      const lsToastName = document.getElementById('langToastName');
+
+      /* ── 언어 감지 (우선순위 URL > localStorage > browser > en) ── */
+      function lsDetectLang() {
+        const urlP = new URLSearchParams(window.location.search);
+        if (urlP.has('lang')) {
+          const v = urlP.get('lang');
+          if (LS_LANGS.some(l => l.code === v)) return v;
+        }
+        const stored = localStorage.getItem('kingsmath_lang');
+        if (stored && LS_LANGS.some(l => l.code === stored)) return stored;
+        const br = navigator.language || '';
+        const brLow = br.toLowerCase();
+        if (brLow.startsWith('pt') && brLow.includes('br')) return 'pt-br';
+        const found = LS_LANGS.find(l => l.code === br.split('-')[0].toLowerCase());
+        if (found) return found.code;
+        return 'en';
+      }
+
+      /* ── SEO + 타이틀 업데이트 ── */
+      function lsUpdateSEO(langCode) {
+        const t = LS_I18N[langCode];
+        if (!t) return;
+        const titleEl = document.getElementById('pg-title');
+        const descEl = document.getElementById('pg-desc');
+        const keysEl = document.getElementById('pg-keys');
+        if (titleEl) titleEl.textContent = t.seo_title;
+        if (descEl) descEl.setAttribute('content', t.seo_desc);
+        if (keysEl) keysEl.setAttribute('content', t.seo_keys);
+        document.documentElement.lang = langCode;
+      }
+
+      /* ── 게임 UI 텍스트 업데이트 ── */
+      function lsApplyGameText(langCode) {
+        const t = LS_I18N[langCode];
+        if (!t) return;
+        /* 게임 타이틀 */
+        const gTitle = document.querySelector('.game-title');
+        if (gTitle) gTitle.textContent = t.title;
+        const gSubtitle = document.querySelector('.game-subtitle');
+        if (gSubtitle) gSubtitle.textContent = t.subtitle;
+        /* 탭 버튼 */
+        const tabRandom = document.querySelector('[data-tab="tab-random"]');
+        if (tabRandom) tabRandom.textContent = t.tab_random;
+        const tabSelect = document.querySelector('[data-tab="tab-select"]');
+        if (tabSelect) tabSelect.textContent = t.tab_select;
+        /* 팀 이름 */
+        const p1Label = document.querySelector('.p1-zone .player-label');
+        if (p1Label) p1Label.textContent = t.red_team;
+        const p2Label = document.querySelector('.p2-zone .player-label');
+        if (p2Label) p2Label.textContent = t.blue_team;
+        /* 타이머 라벨 */
+        const timerLbl = document.getElementById('txt-timer');
+        if (timerLbl) timerLbl.textContent = t.timer_label;
+        /* 출발 버튼 */
+        const startBtn = document.querySelector('.start-game-btn');
+        if (startBtn) startBtn.textContent = t.start_btn;
+        /* 다른 게임 */
+        const otherLink = document.querySelector('.other-game-link');
+        if (otherLink) otherLink.textContent = t.other_game;
+        /* 사진 감상 버튼 */
+        const gallBtn = document.querySelector('.photo-gallery-btn');
+        if (gallBtn) gallBtn.textContent = t.gallery_btn;
+        /* 첫 화면 랜덤 설명 박스 */
+        const rndTitle = document.getElementById('txt-random-title');
+        if (rndTitle) rndTitle.textContent = t.random_title || '어디로 여행할까요?';
+        const rndDesc = document.getElementById('txt-random-desc');
+        if (rndDesc) rndDesc.innerHTML = t.random_desc || '';
+        /* 크레딧 영역 */
+        const crPhoto = document.getElementById('txt-credit-photo');
+        if (crPhoto) crPhoto.textContent = t.credit_photo || '사진 : 정혜란';
+        const crInsta = document.getElementById('txt-credit-insta');
+        if (crInsta) crInsta.textContent = t.credit_insta || '더 많은 사진 보기 📸 @aprilran';
+        const crBook = document.getElementById('txt-credit-book');
+        if (crBook) crBook.textContent = t.credit_book || '📙 사진으로 가꾸는 행복한 교실 (지식프레임)';
+
+        /* 시간/난이도 설정 제목 */
+        const settingTitles = document.querySelectorAll('.setting-title');
+        if (settingTitles.length >= 2) {
+          settingTitles[0].textContent = '⏱ ' + t.time;
+          settingTitles[1].textContent = '🧩 ' + t.diff;
+        }
+        /* 시간 옵션 */
+        const timeOpts = document.querySelectorAll('#time-options .opt-btn');
+        const timeTxts = [t.time_1, t.time_2, t.time_3, t.time_5, t.time_unlimited];
+        timeOpts.forEach((btn, i) => { if (timeTxts[i]) btn.textContent = timeTxts[i]; });
+        /* 카운트다운 remember */
+        const remEl = document.getElementById('countdown-remember');
+        if (remEl) remEl.textContent = t.remember;
+        /* 다시하기 */
+        const retryBtns = document.querySelectorAll('.diff-btn');
+        retryBtns.forEach(b => { if (b.onclick && b.onclick.toString().includes('btn-home')) b.textContent = t.retry; });
+      }
+
+      /* ── 언어 목록 렌더링 ── */
+      function renderLanguages(filterText) {
+        filterText = (filterText || '').toLowerCase();
+        lsGrid.innerHTML = '';
+        lsNoResult.style.display = 'none';
+        lsGrid.style.display = 'grid';
+
+        const filtered = LS_LANGS.filter(l =>
+          l.name.toLowerCase().includes(filterText) ||
+          l.enName.toLowerCase().includes(filterText) ||
+          l.code.toLowerCase().includes(filterText)
+        );
+
+        if (filtered.length === 0) {
+          lsGrid.style.display = 'none';
+          lsNoResult.style.display = 'flex';
+          return;
+        }
+
+        filtered.forEach(lang => {
+          const isSelected = lang.code === lsCurrentLang;
+          const item = document.createElement('div');
+          item.style.cssText = [
+            'box-sizing:border-box',
+            'display:flex', 'align-items:center', 'gap:10px',
+            'padding:10px 12px', 'border-radius:12px', 'cursor:pointer',
+            'border:1px solid ' + (isSelected ? '#eab308' : '#374151'),
+            'background:' + (isSelected ? '#1f2937' : 'rgba(31,41,55,0.4)'),
+            'transition:background 0.15s, border-color 0.15s',
+            'overflow:hidden'
+          ].join(';');
+
+          const flagBox = document.createElement('div');
+          flagBox.style.cssText = 'flex-shrink:0;width:32px;height:22px;border-radius:3px;overflow:hidden;border:1px solid rgba(55,65,81,0.5);';
+          const flagImg = document.createElement('img');
+          flagImg.src = `https://flagcdn.com/w40/${lang.country}.png`;
+          flagImg.alt = lang.country;
+          flagImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+          flagImg.onerror = function () { this.style.display = 'none'; };
+          flagBox.appendChild(flagImg);
+
+          const textBox = document.createElement('div');
+          textBox.style.cssText = 'flex:1;min-width:0;overflow:hidden;';
+          const nameSpan = document.createElement('div');
+          nameSpan.textContent = lang.name;
+          nameSpan.style.cssText = 'font-size:13px;font-weight:600;color:' + (isSelected ? '#fbbf24' : '#fff') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;';
+          const enSpan = document.createElement('div');
+          enSpan.textContent = lang.enName;
+          enSpan.style.cssText = 'font-size:11px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;';
+          textBox.appendChild(nameSpan);
+          textBox.appendChild(enSpan);
+
+          item.appendChild(flagBox);
+          item.appendChild(textBox);
+
+          if (isSelected) {
+            const checkIcon = document.createElement('i');
+            checkIcon.className = 'fa-solid fa-circle-check';
+            checkIcon.style.cssText = 'color:#eab308;font-size:16px;margin-left:auto;flex-shrink:0;font-family:"Font Awesome 6 Free";font-weight:900;';
+            item.appendChild(checkIcon);
+          }
+
+          /* 호버 */
+          item.addEventListener('mouseenter', function () {
+            if (!isSelected) {
+              this.style.background = '#1f2937';
+              this.style.borderColor = '#6b7280';
+            }
+          });
+          item.addEventListener('mouseleave', function () {
+            if (!isSelected) {
+              this.style.background = 'rgba(31,41,55,0.4)';
+              this.style.borderColor = '#374151';
+            }
+          });
+
+          item.addEventListener('click', () => lsSelectLanguage(lang));
+          lsGrid.appendChild(item);
+        });
+      }
+
+      /* ── 언어 선택 처리 ── */
+      function lsSelectLanguage(lang) {
+        lsCurrentLang = lang.code;
+        /* 버튼 업데이트 */
+        lsFlagImg.src = `https://flagcdn.com/w40/${lang.country}.png`;
+        lsNameSpan.textContent = lang.name;
+        /* 저장 & URL */
+        localStorage.setItem('kingsmath_lang', lang.code);
+        const newUrl = window.location.protocol + '//' + window.location.host +
+          window.location.pathname + '?lang=' + lang.code;
+        history.pushState({ lang: lang.code }, '', newUrl);
+        /* SEO */
+        lsUpdateSEO(lang.code);
+        /* 게임 텍스트 */
+        lsApplyGameText(lang.code);
+        /* 목록 갱신 */
+        renderLanguages(lsSearchInput.value);
+        /* 모달 닫기 */
+        lsCloseModal();
+        /* 토스트 */
+        lsShowToast(lang);
+      }
+
+      /* ── 모달 열기/닫기 ── */
+      function lsOpenModal() {
+        lsModal.style.opacity = '1';
+        lsModal.style.visibility = 'visible';
+        lsModalBox.style.opacity = '1';
+        lsModalBox.style.transform = 'scale(1) translateY(0)';
+        setTimeout(() => lsSearchInput.focus(), 120);
+      }
+      function lsCloseModal() {
+        lsModal.style.opacity = '0';
+        lsModal.style.visibility = 'hidden';
+        lsModalBox.style.opacity = '0';
+        lsModalBox.style.transform = 'scale(0.96) translateY(-8px)';
+        lsSearchInput.value = '';
+        renderLanguages('');
+      }
+
+      /* ── 토스트 ── */
+      function lsShowToast(lang) {
+        const t = LS_I18N[lang.code];
+        lsToastMsg.textContent = (t && t.toast) ? t.toast : 'Language changed.';
+        lsToastName.textContent = lang.name;
+        lsToast.style.transform = 'translateY(0)';
+        lsToast.style.opacity = '1';
+        clearTimeout(lsToastTimer);
+        lsToastTimer = setTimeout(() => {
+          lsToast.style.transform = 'translateY(120%)';
+          lsToast.style.opacity = '0';
+        }, 2800);
+      }
+
+      /* ── 언어 선택기 표시/숨김 (게임 시작 시 숨김) ── */
+      window.lsShowSelector = function () {
+        document.getElementById('langSelectorContainer').style.display = 'block';
+      };
+      window.lsHideSelector = function () {
+        document.getElementById('langSelectorContainer').style.display = 'none';
+        lsCloseModal();
+      };
+
+      /* ── 이벤트 바인딩 ── */
+      lsTriggerBtn.addEventListener('click', lsOpenModal);
+      lsCloseBtn.addEventListener('click', lsCloseModal);
+      lsModal.addEventListener('click', function (e) {
+        if (e.target === lsModal) lsCloseModal();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lsModal.style.visibility === 'visible') lsCloseModal();
+      });
+      lsSearchInput.addEventListener('input', function (e) {
+        renderLanguages(e.target.value);
+      });
+
+      /* ── 홈 버튼 클릭 시 언어 선택기 다시 표시 ── */
+      document.getElementById('btn-home').addEventListener('click', function () {
+        setTimeout(lsShowSelector, 100);
+      }, true);
+
+      /* ── 게임 시작 감지: startSequence 래핑 ── */
+      const _origStartSeq = window.startSequence;
+      if (typeof _origStartSeq === 'function') {
+        window.startSequence = function () {
+          lsHideSelector();
+          return _origStartSeq.apply(this, arguments);
+        };
+      }
+
+      /* ── 초기화 ── */
+      lsCurrentLang = lsDetectLang();
+      const initLangObj = LS_LANGS.find(l => l.code === lsCurrentLang) || LS_LANGS[0];
+      lsFlagImg.src = `https://flagcdn.com/w40/${initLangObj.country}.png`;
+      lsNameSpan.textContent = initLangObj.name;
+      lsUpdateSEO(lsCurrentLang);
+      lsApplyGameText(lsCurrentLang);
+      renderLanguages('');
+
+    })(); // IIFE 끝
+  </script>
+
+</body>
+
+</html>
